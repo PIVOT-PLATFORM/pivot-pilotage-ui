@@ -1,0 +1,13 @@
+/* Styles globaux — squelette minimal.
+ * Migrera vers @pivot/design-system une fois ce repo publié (voir CLAUDE.md, ADR-007).
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}

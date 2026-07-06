@@ -1,0 +1,105 @@
+name: Lighthouse
+
+# Audit accessibilité (WCAG) — squelette bootstrap-only.
+#
+# GAP CONNU (voir CLAUDE.md, TODO-SETUP.md §4) : pivot-ui audite aussi des pages
+# AUTHENTIFIÉES contre un vrai backend pivot-core (image GHCR + postgres + redis). Ce repo
+# n'a aucune page d'authentification réelle aujourd'hui (shell minimal, pas de feature
+# développée) — seule la passe PUBLIQUE (.lighthouserc.noauth.json) tourne, contre la route
+# placeholder de ce squelette, servie localement (npx serve), sans dépendance backend.
+# La passe authentifiée est volontairement absente (TODO ci-dessous) plutôt que de laisser un
+# job garanti à l'échec (pas d'image pivot-core-pilotage, pas de formulaire de login, pas
+# d'identifiants de test pour ce module).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.github/ISSUE_TEMPLATE/**'
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  lighthouse:
+    name: Lighthouse — Accessibilité
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      statuses: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node + npm
+        uses: ./.github/actions/setup-node
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Angular (production)
+        run: npm run build -- --configuration production
+
+      - name: Serve Angular build
+        # Projet Angular = "frontend" → dist/frontend/browser.
+        run: npx --yes serve dist/frontend/browser -p 4200 --single &
+
+      - name: Wait for frontend
+        run: curl --retry 15 --retry-delay 1 --retry-connrefused --silent --output /dev/null http://localhost:4200/
+
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@c785b87e244131f27c9f19c1a33e2ead956ab7ce # v1
+        id: setup-chrome
+
+      - name: Run Lighthouse CI (public — pas de pass authentifiée, voir en-tête)
+        env:
+          LHCI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: |
+          # IMPORTANT : le binaire Lighthouse CI vient de @lhci/cli (pinné). `npx lhci`
+          # SANS scope installe un package npm tiers homonyme ("lhci", non Lighthouse) —
+          # il s'exécutait en no-op (exit 0) sans produire d'audit ni de rapport.
+          # autorun = collect + assert + upload(filesystem) → lighthouse-reports/public/
+          # (HTML + *.report.json + manifest.json), exploités par le résumé et l'artifact.
+          npx --yes @lhci/cli@0.15.1 autorun --config=.lighthouserc.noauth.json
+          # TODO: réactiver une fois une vraie page authentifiée disponible dans ce module
+          # (passe .lighthouserc.json + LH_USER_EMAIL/LH_USER_PASSWORD contre un backend
+          # pivot-pilotage-core réel — cf. TODO-SETUP.md §4).
+
+      - name: Lighthouse — résumé agrégé
+        if: always()
+        run: |
+          {
+            echo "## Lighthouse — Accessibilité PIVOT-PILOTAGE-UI"
+            echo ""
+            echo "| Page | A11y | Perf | SEO | Bonnes pratiques |"
+            echo "|------|------|------|-----|------------------|"
+            # manifest.json = source fiable des scores agrégés par URL (run représentatif).
+            for m in $(find lighthouse-reports -name "manifest.json" 2>/dev/null); do
+              jq -r '.[] | select(.isRepresentativeRun)
+                | "| \(.url) "
+                + "| \((.summary.accessibility * 100) | round)% "
+                + "| \((.summary.performance * 100) | round)% "
+                + "| \((.summary.seo * 100) | round)% "
+                + "| \((.summary["best-practices"] * 100) | round)% |"' "$m"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: lighthouse-report
+          path: lighthouse-reports/
+          retention-days: 7

@@ -1,0 +1,11 @@
+# Tout changement requiert review de l'équipe frontend
+* @ApoSkunz @0bno @Destinea @tellebma @leo-brgn
+
+# Workflows et config CI/CD
+.github/workflows/ @ApoSkunz @0bno @Destinea @tellebma @leo-brgn
+.github/CODEOWNERS @ApoSkunz @0bno @Destinea @tellebma @leo-brgn
+
+# Pas de rows dédiées pour l'instant : squelette bootstrap-only, pas encore de
+# src/app/core/auth/ (l'auth vit dans pivot-ui, consommée via @pivot/ui-core une fois
+# publiée) ni de contrat de module stabilisé dans src/app/features/ (voir CLAUDE.md).
+# À ajouter dès que ces structures existent réellement dans ce repo.
