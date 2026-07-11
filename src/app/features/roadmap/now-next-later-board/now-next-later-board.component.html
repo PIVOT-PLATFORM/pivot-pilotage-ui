@@ -1,0 +1,66 @@
+<div class="nnl-board">
+  @for (horizon of horizons; track horizon) {
+    <div
+      class="nnl-column"
+      [attr.data-nnl-column]="horizon"
+      role="list"
+      [attr.aria-label]="horizonLabel(horizon)"
+    >
+      <h2 class="nnl-column__header">{{ horizonLabel(horizon) }} ({{ bucketInitiatives(horizon).length }})</h2>
+      @for (initiative of bucketInitiatives(horizon); track initiative.id) {
+        <div
+          class="nnl-card"
+          [class.nnl-card--dragging]="draggingId() === initiative.id"
+          [style.transform]="cardTransform(initiative.id)"
+          tabindex="0"
+          role="button"
+          [attr.aria-label]="
+            'roadmap.board.nowNextLater.card.ariaLabel' | transloco: { name: initiative.name, horizon: horizonLabel(horizon) }
+          "
+          (pointerdown)="onCardPointerDown($event, initiative, horizon)"
+          (pointermove)="onCardPointerMove($event)"
+          (pointerup)="onCardPointerUp($event)"
+          (pointercancel)="onCardPointerCancel($event)"
+          (lostpointercapture)="onCardPointerCancel($event)"
+          (keydown)="onCardKeyDown($event, initiative, horizon)"
+        >
+          {{ initiative.name }}
+        </div>
+      }
+      @if (bucketInitiatives(horizon).length === 0) {
+        <p class="nnl-column__empty">{{ 'roadmap.board.nowNextLater.empty' | transloco }}</p>
+      }
+    </div>
+  }
+
+  @if (unbucketedInitiatives().length > 0) {
+    <div
+      class="nnl-column nnl-column--unbucketed"
+      data-nnl-column="UNBUCKETED"
+      role="list"
+      [attr.aria-label]="horizonLabel(null)"
+    >
+      <h2 class="nnl-column__header">{{ horizonLabel(null) }} ({{ unbucketedInitiatives().length }})</h2>
+      @for (initiative of unbucketedInitiatives(); track initiative.id) {
+        <div
+          class="nnl-card"
+          [class.nnl-card--dragging]="draggingId() === initiative.id"
+          [style.transform]="cardTransform(initiative.id)"
+          tabindex="0"
+          role="button"
+          [attr.aria-label]="
+            'roadmap.board.nowNextLater.card.ariaLabel' | transloco: { name: initiative.name, horizon: horizonLabel(null) }
+          "
+          (pointerdown)="onCardPointerDown($event, initiative, null)"
+          (pointermove)="onCardPointerMove($event)"
+          (pointerup)="onCardPointerUp($event)"
+          (pointercancel)="onCardPointerCancel($event)"
+          (lostpointercapture)="onCardPointerCancel($event)"
+          (keydown)="onCardKeyDown($event, initiative, null)"
+        >
+          {{ initiative.name }}
+        </div>
+      }
+    </div>
+  }
+</div>

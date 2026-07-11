@@ -16,6 +16,8 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { forkJoin } from 'rxjs';
 import { RoadmapApiService } from '../data-access/roadmap-api.service';
 import {
+  Horizon,
+  HorizonViewResponse,
   Initiative,
   InitiativePlacementChange,
   Lane,
@@ -26,10 +28,14 @@ import {
 } from '../data-access/roadmap.models';
 import { InitiativeBarComponent } from '../initiative-bar/initiative-bar.component';
 import { MilestoneMarkerComponent } from '../milestone-marker/milestone-marker.component';
+import { NowNextLaterBoardComponent } from '../now-next-later-board/now-next-later-board.component';
 import { RoadmapExportButtonComponent } from '../roadmap-export-button/roadmap-export-button.component';
 import { RoadmapSharePanelComponent } from '../roadmap-share-panel/roadmap-share-panel.component';
 import { RoadmapTimeScaleService } from '../roadmap-time-scale.service';
 import { PERIOD_WIDTH_PX, PeriodCell, RoadmapTimeScale, buildTimeAxis } from '../roadmap-timeline';
+
+/** Which projection of the same initiatives the board currently renders (US22.3.3). */
+export type RoadmapViewMode = 'TIMELINE' | 'NOW_NEXT_LATER';
 
 /**
  * Roadmap-rapide board (US22.3.1 — "Créer une roadmap rapide"): create lanes (flat groupings —
@@ -87,6 +93,19 @@ import { PERIOD_WIDTH_PX, PeriodCell, RoadmapTimeScale, buildTimeAxis } from '..
  * owns none of their logic, it only supplies `projectRef` and a `#roadmapCaptureArea` template
  * ref (via {@link captureAreaRef}) pointing at `.rm-board__timeline` for the export button to
  * capture. See those components' own TSDoc for the share-link and PNG/PDF-export behaviour.
+ *
+ * **Now/Next/Later (US22.3.3 — "Vue Now/Next/Later").** {@link viewMode} toggles between the
+ * temporal (bars-on-an-axis) view above and a 3-column Now/Next/Later projection of the exact
+ * same initiatives ("même jeu d'initiatives, changement de rendu uniquement" — this US's backlog
+ * file). Switching into `NOW_NEXT_LATER` fetches `RoadmapApiService.getHorizonView` (a
+ * server-computed grouping of the same dataset `listInitiatives` already returned, see that
+ * method's TSDoc) into {@link horizonView}, rendered by `NowNextLaterBoardComponent`. A move
+ * (drag or keyboard) there emits a resolved `{initiative, horizon}` pair, handled by
+ * {@link onHorizonChange} with the exact same optimistic-update/rollback/staleness-guard shape as
+ * {@link onPlacementChange}/{@link onMilestoneDateChange} above, operating on {@link horizonView}
+ * instead of `initiatives`. Switching *back* to `TIMELINE` never re-fetches — `lanes`/`initiatives`
+ * stay loaded from `ngOnInit` throughout, exactly like a time-scale switch (US22.3.2) never
+ * re-fetches either.
  */
 @Component({
   selector: 'app-roadmap-board',
@@ -95,6 +114,7 @@ import { PERIOD_WIDTH_PX, PeriodCell, RoadmapTimeScale, buildTimeAxis } from '..
   imports: [
     InitiativeBarComponent,
     MilestoneMarkerComponent,
+    NowNextLaterBoardComponent,
     RoadmapExportButtonComponent,
     RoadmapSharePanelComponent,
     TranslocoPipe,
@@ -169,6 +189,18 @@ export class RoadmapBoardComponent implements OnInit {
 
   /** Same staleness-guard pattern as {@link pendingPlacementTokens}, scoped to milestone date changes. */
   private readonly pendingMilestoneTokens = new Map<number, symbol>();
+
+  // --- US22.3.3 — Vue Now/Next/Later -----------------------------------------------------------
+
+  protected readonly viewMode = signal<RoadmapViewMode>('TIMELINE');
+  protected readonly horizonView = signal<HorizonViewResponse | null>(null);
+  protected readonly horizonViewLoading = signal(false);
+  protected readonly horizonViewErrorKey = signal<string | null>(null);
+  /** PATCH-horizon error, surfaced only while {@link viewMode} is `NOW_NEXT_LATER` — same shape as {@link placementErrorKey}/{@link milestoneDateErrorKey}. */
+  protected readonly horizonErrorKey = signal<string | null>(null);
+
+  /** Same staleness-guard pattern as {@link pendingPlacementTokens}, scoped to horizon changes. */
+  private readonly pendingHorizonTokens = new Map<number, symbol>();
 
   /** Resolves a lane's display name for a milestone's aria-label — `null` when the milestone has no `laneId` (cross-project marker, see `Milestone`'s TSDoc). */
   protected laneNameFor(laneId: number | null): string | null {
@@ -544,5 +576,125 @@ export class RoadmapBoardComponent implements OnInit {
       return 'roadmap.board.milestoneDate.errors.NOT_FOUND';
     }
     return 'roadmap.board.milestoneDate.errors.GENERIC';
+  }
+
+  // --- US22.3.3 — Vue Now/Next/Later -------------------------------------------------------------
+
+  /**
+   * Switches the board's rendering (AC1). Purely a display-mode toggle — `lanes()`/`initiatives()`
+   * are never re-fetched by this switch (see class TSDoc); switching *into* `NOW_NEXT_LATER` fetches
+   * {@link horizonView} since that grouping isn't loaded by `loadRoadmap` (which only needs the flat
+   * list for the timeline view).
+   */
+  protected setViewMode(mode: RoadmapViewMode): void {
+    this.viewMode.set(mode);
+    if (mode === 'NOW_NEXT_LATER') {
+      this.loadHorizonView();
+    }
+  }
+
+  protected retryHorizonView(): void {
+    this.loadHorizonView();
+  }
+
+  private loadHorizonView(): void {
+    this.horizonViewLoading.set(true);
+    this.horizonViewErrorKey.set(null);
+
+    this.roadmapApi
+      .getHorizonView(this.projectRef)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: view => {
+          this.horizonView.set(view);
+          this.horizonViewLoading.set(false);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.horizonViewLoading.set(false);
+          this.horizonViewErrorKey.set(
+            error.status === 404
+              ? 'roadmap.board.nowNextLater.load.errors.NOT_FOUND'
+              : 'roadmap.board.nowNextLater.load.errors.GENERIC',
+          );
+        },
+      });
+  }
+
+  /**
+   * See `onPlacementChange`'s TSDoc — identical optimistic-update/rollback/staleness-guard flow,
+   * applied to {@link horizonView} instead of `initiatives`. On success, the canonical
+   * `initiatives()` list's matching entry is also patched with the confirmed `horizon` so the two
+   * signals never silently diverge, even though the timeline view never renders that field today.
+   */
+  protected onHorizonChange(initiative: Initiative, horizon: Horizon): void {
+    const previousView = this.horizonView();
+    if (!previousView) {
+      return; // defensive — a move can't be emitted before `horizonView` has loaded
+    }
+    const token = Symbol();
+    this.pendingHorizonTokens.set(initiative.id, token);
+
+    this.horizonErrorKey.set(null);
+    this.horizonView.set(this.moveInitiativeToBucket(previousView, initiative.id, horizon));
+    this.announcement.set(
+      this.transloco.translate('roadmap.board.nowNextLater.card.announceMoved', {
+        name: initiative.name,
+        horizon: this.transloco.translate(`roadmap.board.nowNextLater.horizonLabel.${horizon}`),
+      }),
+    );
+
+    this.roadmapApi
+      .updateHorizon(this.projectRef, initiative.id, { horizon })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: updated => {
+          if (this.pendingHorizonTokens.get(initiative.id) !== token) {
+            return; // superseded by a more recent horizon change on this initiative
+          }
+          this.initiatives.update(list => list.map(i => (i.id === updated.id ? updated : i)));
+        },
+        error: (error: HttpErrorResponse) => {
+          if (this.pendingHorizonTokens.get(initiative.id) !== token) {
+            return; // superseded — a newer change already owns this initiative's outcome
+          }
+          this.horizonView.set(previousView);
+          this.horizonErrorKey.set(this.resolveHorizonErrorKey(error));
+          // A11y — the earlier "moved" announcement must be corrected, not left standing, see
+          // `onPlacementChange`'s identical rationale.
+          this.announcement.set(
+            this.transloco.translate('roadmap.board.nowNextLater.card.announceReverted', { name: initiative.name }),
+          );
+        },
+      });
+  }
+
+  private resolveHorizonErrorKey(error: HttpErrorResponse): string {
+    if (error.status === 403) {
+      return 'roadmap.board.horizon.errors.FORBIDDEN';
+    }
+    if (error.status === 404) {
+      return 'roadmap.board.horizon.errors.NOT_FOUND';
+    }
+    return 'roadmap.board.horizon.errors.GENERIC';
+  }
+
+  /** Removes `initiativeId` from wherever it currently sits (a bucket or `unbucketed`) and re-inserts it into `horizon`'s bucket — pure data transform, no mutation of `view`. */
+  private moveInitiativeToBucket(view: HorizonViewResponse, initiativeId: number, horizon: Horizon): HorizonViewResponse {
+    const fromBucket = view.buckets.flatMap(bucket => bucket.initiatives).find(i => i.id === initiativeId);
+    const fromUnbucketed = view.unbucketed.find(i => i.id === initiativeId);
+    const moved = fromBucket ?? fromUnbucketed;
+    if (!moved) {
+      return view; // defensive — the initiative wasn't found in this view, nothing to move
+    }
+
+    const movedInitiative: Initiative = { ...moved, horizon };
+    const buckets = view.buckets.map(bucket => {
+      const withoutMoved = bucket.initiatives.filter(i => i.id !== initiativeId);
+      return bucket.horizon === horizon
+        ? { ...bucket, initiatives: [...withoutMoved, movedInitiative] }
+        : { ...bucket, initiatives: withoutMoved };
+    });
+
+    return { buckets, unbucketed: view.unbucketed.filter(i => i.id !== initiativeId) };
   }
 }

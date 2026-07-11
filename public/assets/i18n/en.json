@@ -13,6 +13,13 @@
           "SEMESTER": "Semester"
         }
       },
+      "viewMode": {
+        "label": "View",
+        "options": {
+          "TIMELINE": "Timeline",
+          "NOW_NEXT_LATER": "Now / Next / Later"
+        }
+      },
       "load": {
         "errors": {
           "NOT_FOUND": "This project could not be found, or you don't have access to it.",
@@ -92,6 +99,34 @@
           "FORBIDDEN": "You don't have permission to move this milestone.",
           "NOT_FOUND": "This project or milestone could not be found.",
           "GENERIC": "Could not update the milestone."
+        }
+      },
+      "nowNextLater": {
+        "loading": "Loading the Now/Next/Later view…",
+        "empty": "No initiatives in this bucket.",
+        "load": {
+          "errors": {
+            "NOT_FOUND": "This project could not be found, or you don't have access to it.",
+            "GENERIC": "Could not load the Now/Next/Later view."
+          }
+        },
+        "horizonLabel": {
+          "NOW": "Now",
+          "NEXT": "Next",
+          "LATER": "Later",
+          "UNBUCKETED": "Not yet triaged"
+        },
+        "card": {
+          "ariaLabel": "Initiative {{name}}, horizon: {{horizon}}. Left/Right arrow keys to move between buckets.",
+          "announceMoved": "{{name}} moved to {{horizon}}.",
+          "announceReverted": "{{name}}: move reverted, an error occurred."
+        }
+      },
+      "horizon": {
+        "errors": {
+          "FORBIDDEN": "You don't have permission to change this initiative's horizon.",
+          "NOT_FOUND": "This project or initiative could not be found.",
+          "GENERIC": "Could not update the initiative's horizon."
         }
       }
     },

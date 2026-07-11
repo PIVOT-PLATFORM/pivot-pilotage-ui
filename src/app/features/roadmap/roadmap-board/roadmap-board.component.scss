@@ -54,6 +54,17 @@
   gap: 0.5rem;
 }
 
+// US22.3.3 — vue temporelle <-> Now/Next/Later, segmented-button toggle.
+.rm-board__view-toggle {
+  display: flex;
+  gap: 0.5rem;
+
+  button[aria-pressed='true'] {
+    font-weight: 600;
+    background: #e8eaed;
+  }
+}
+
 .rm-board__periods {
   display: flex;
 }
@@ -127,7 +138,8 @@
 .rm-board__form button:focus-visible,
 .rm-board__status button:focus-visible,
 .rm-board__scale select:focus-visible,
-.rm-board__toolbar button:focus-visible {
+.rm-board__toolbar button:focus-visible,
+.rm-board__view-toggle button:focus-visible {
   outline: 3px solid #202124;
   outline-offset: 2px;
 }

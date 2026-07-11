@@ -6,7 +6,7 @@ import { Subject, of, throwError } from 'rxjs';
 import { describe, it, expect, vi } from 'vitest';
 import { RoadmapBoardComponent } from './roadmap-board.component';
 import { RoadmapApiService } from '../data-access/roadmap-api.service';
-import { Initiative, Lane, Milestone } from '../data-access/roadmap.models';
+import { HorizonViewResponse, Initiative, Lane, Milestone } from '../data-access/roadmap.models';
 import { RoadmapTimeScaleService } from '../roadmap-time-scale.service';
 import { PERIOD_WIDTH_PX, RoadmapTimeScale } from '../roadmap-timeline';
 
@@ -23,6 +23,7 @@ const INITIATIVE_A: Initiative = {
   fuzzyPeriodEnd: null,
   temporalPrecision: 'QUARTER',
   revision: 0,
+  horizon: 'NOW',
 };
 
 const MILESTONE_A: Milestone = {
@@ -34,6 +35,15 @@ const MILESTONE_A: Milestone = {
   revision: 0,
 };
 
+const HORIZON_VIEW_DEFAULT: HorizonViewResponse = {
+  buckets: [
+    { horizon: 'NOW', initiatives: [INITIATIVE_A] },
+    { horizon: 'NEXT', initiatives: [] },
+    { horizon: 'LATER', initiatives: [] },
+  ],
+  unbucketed: [],
+};
+
 interface ApiMock {
   listLanes: ReturnType<typeof vi.fn>;
   createLane: ReturnType<typeof vi.fn>;
@@ -43,6 +53,8 @@ interface ApiMock {
   listMilestones: ReturnType<typeof vi.fn>;
   createMilestone: ReturnType<typeof vi.fn>;
   updateMilestone: ReturnType<typeof vi.fn>;
+  getHorizonView: ReturnType<typeof vi.fn>;
+  updateHorizon: ReturnType<typeof vi.fn>;
 }
 
 interface TimeScaleServiceMock {
@@ -60,6 +72,8 @@ function makeApiMock(overrides: Partial<ApiMock> = {}): ApiMock {
     listMilestones: vi.fn(() => of([MILESTONE_A])),
     createMilestone: vi.fn(),
     updateMilestone: vi.fn(),
+    getHorizonView: vi.fn(() => of(HORIZON_VIEW_DEFAULT)),
+    updateHorizon: vi.fn(),
     ...overrides,
   };
 }
@@ -685,6 +699,207 @@ describe('RoadmapBoardComponent', () => {
       expect(select.getAttribute('id')).toBe('rm-time-scale');
       const label = (fixture.nativeElement as HTMLElement).querySelector('label[for="rm-time-scale"]');
       expect(label?.getAttribute('for')).toBe(select.id);
+    });
+  });
+
+  describe('Now/Next/Later view (US22.3.3 — "Vue Now/Next/Later")', () => {
+    function viewToggleButtons(fixture: ComponentFixture<RoadmapBoardComponent>): HTMLButtonElement[] {
+      return Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll('.rm-board__view-toggle button'),
+      ) as HTMLButtonElement[];
+    }
+
+    function switchToNowNextLater(fixture: ComponentFixture<RoadmapBoardComponent>): void {
+      viewToggleButtons(fixture)[1].click();
+      fixture.detectChanges();
+    }
+
+    function switchToTimeline(fixture: ComponentFixture<RoadmapBoardComponent>): void {
+      viewToggleButtons(fixture)[0].click();
+      fixture.detectChanges();
+    }
+
+    function cardByName(fixture: ComponentFixture<RoadmapBoardComponent>, name: string): HTMLElement {
+      return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.nnl-card')).find(
+        el => el.textContent?.trim() === name,
+      ) as HTMLElement;
+    }
+
+    it('renders the view toggle, defaulting to TIMELINE, never fetching the horizon view up front', () => {
+      const api = makeApiMock();
+      const fixture = createFixture(api);
+
+      const [timelineBtn, nnlBtn] = viewToggleButtons(fixture);
+      expect(timelineBtn.getAttribute('aria-pressed')).toBe('true');
+      expect(nnlBtn.getAttribute('aria-pressed')).toBe('false');
+      expect(api.getHorizonView).not.toHaveBeenCalled();
+    });
+
+    it('AC1 — switching to NOW_NEXT_LATER fetches the horizon view and renders it as columns', () => {
+      const api = makeApiMock();
+      const fixture = createFixture(api);
+
+      switchToNowNextLater(fixture);
+
+      expect(api.getHorizonView).toHaveBeenCalledWith(REF);
+      expect((fixture.nativeElement as HTMLElement).querySelector('app-now-next-later-board')).not.toBeNull();
+      expect(cardByName(fixture, 'Initiative A')).not.toBeUndefined();
+    });
+
+    it('shows a NOT_FOUND load error on 404 and recovers on retry', () => {
+      const api = makeApiMock({
+        getHorizonView: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 404 }))),
+      });
+      const fixture = createFixture(api);
+
+      switchToNowNextLater(fixture);
+
+      expect(text(fixture)).toContain('roadmap.board.nowNextLater.load.errors.NOT_FOUND');
+
+      api.getHorizonView.mockReturnValue(of(HORIZON_VIEW_DEFAULT));
+      const retryButton = (fixture.nativeElement as HTMLElement).querySelector(
+        '.rm-board__status--error button',
+      ) as HTMLButtonElement;
+      retryButton.click();
+      fixture.detectChanges();
+
+      expect(text(fixture)).not.toContain('roadmap.board.nowNextLater.load.errors.NOT_FOUND');
+      expect((fixture.nativeElement as HTMLElement).querySelector('app-now-next-later-board')).not.toBeNull();
+    });
+
+    it('shows a GENERIC load error on a non-404 failure', () => {
+      const api = makeApiMock({
+        getHorizonView: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 500 }))),
+      });
+      const fixture = createFixture(api);
+
+      switchToNowNextLater(fixture);
+
+      expect(text(fixture)).toContain('roadmap.board.nowNextLater.load.errors.GENERIC');
+    });
+
+    it('switching back to TIMELINE never re-fetches lanes/initiatives/milestones (same dataset, rendering change only)', () => {
+      const api = makeApiMock();
+      const fixture = createFixture(api);
+
+      switchToNowNextLater(fixture);
+      switchToTimeline(fixture);
+      switchToNowNextLater(fixture);
+
+      expect(api.listLanes).toHaveBeenCalledTimes(1);
+      expect(api.listInitiatives).toHaveBeenCalledTimes(1);
+      expect(api.listMilestones).toHaveBeenCalledTimes(1);
+      // The horizon view itself IS re-fetched on every switch back into NOW_NEXT_LATER (always-fresh, see class TSDoc) — twice here.
+      expect(api.getHorizonView).toHaveBeenCalledTimes(2);
+    });
+
+    it('AC2/A11y — moving a card (keyboard) applies the new horizon optimistically via PATCH', () => {
+      const api = makeApiMock({
+        updateHorizon: vi.fn(() => of({ ...INITIATIVE_A, horizon: 'NEXT' })),
+      });
+      const fixture = createFixture(api);
+      switchToNowNextLater(fixture);
+
+      cardByName(fixture, 'Initiative A').dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+      );
+      fixture.detectChanges();
+
+      expect(api.updateHorizon).toHaveBeenCalledWith(REF, INITIATIVE_A.id, { horizon: 'NEXT' });
+      expect(text(fixture)).not.toContain('roadmap.board.horizon.errors');
+    });
+
+    it('Security AC — rolls back and surfaces FORBIDDEN when the write 403s (fail-closed backend today)', () => {
+      const api = makeApiMock({
+        updateHorizon: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 403 }))),
+      });
+      const fixture = createFixture(api);
+      switchToNowNextLater(fixture);
+
+      cardByName(fixture, 'Initiative A').dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+      );
+      fixture.detectChanges();
+
+      expect(text(fixture)).toContain('roadmap.board.horizon.errors.FORBIDDEN');
+      // Rolled back — the initiative is still visible, back in its original (NOW) column.
+      expect(cardByName(fixture, 'Initiative A')).not.toBeUndefined();
+    });
+
+    it.each([
+      [404, 'roadmap.board.horizon.errors.NOT_FOUND'],
+      [500, 'roadmap.board.horizon.errors.GENERIC'],
+    ])('maps a %d horizon-change error to %s', (status, expectedKey) => {
+      const api = makeApiMock({
+        updateHorizon: vi.fn(() => throwError(() => new HttpErrorResponse({ status }))),
+      });
+      const fixture = createFixture(api);
+      switchToNowNextLater(fixture);
+
+      cardByName(fixture, 'Initiative A').dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+      );
+      fixture.detectChanges();
+
+      expect(text(fixture)).toContain(expectedKey);
+    });
+
+    it('A11y — announces a "moved" message optimistically, then corrects it to "reverted" on rollback', () => {
+      const api = makeApiMock({
+        updateHorizon: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 403 }))),
+      });
+      const fixture = createFixture(api);
+      switchToNowNextLater(fixture);
+
+      cardByName(fixture, 'Initiative A').dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+      );
+      fixture.detectChanges();
+
+      const liveRegion = (fixture.nativeElement as HTMLElement).querySelector('[aria-live="polite"]');
+      expect(liveRegion?.textContent).toContain('roadmap.board.nowNextLater.card.announceReverted');
+    });
+
+    it('Staleness guard — an out-of-order (older) PATCH response never clobbers a newer horizon change', () => {
+      const responses: Subject<Initiative>[] = [];
+      const api = makeApiMock({
+        updateHorizon: vi.fn(() => {
+          const subject = new Subject<Initiative>();
+          responses.push(subject);
+          return subject.asObservable();
+        }),
+      });
+      const fixture = createFixture(api);
+      switchToNowNextLater(fixture);
+      const card = () => cardByName(fixture, 'Initiative A');
+
+      // Two nudges in quick succession on the SAME initiative (NOW -> NEXT -> LATER), CD flushed
+      // between them so the second builds on the first's already-applied optimistic update —
+      // exactly like the placement/milestone staleness-guard tests above.
+      card().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+      fixture.detectChanges();
+      cardByName(fixture, 'Initiative A').dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+      );
+      fixture.detectChanges();
+
+      expect(responses).toHaveLength(2);
+      expect(api.updateHorizon.mock.calls[0]).toEqual([REF, INITIATIVE_A.id, { horizon: 'NEXT' }]);
+      expect(api.updateHorizon.mock.calls[1]).toEqual([REF, INITIATIVE_A.id, { horizon: 'LATER' }]);
+
+      // The SECOND (newer) request's response arrives FIRST (network reordering).
+      responses[1].next({ ...INITIATIVE_A, horizon: 'LATER' });
+      // The FIRST (now-superseded) request's response arrives LAST — must be a no-op.
+      responses[0].next({ ...INITIATIVE_A, horizon: 'NEXT' });
+      fixture.detectChanges();
+
+      // Final state reflects the SECOND (LATER) response — the card sits in the LATER column,
+      // not clobbered back to NEXT by the stale, later-arriving first response.
+      expect(
+        (fixture.nativeElement as HTMLElement)
+          .querySelector('[data-nnl-column="LATER"]')
+          ?.textContent?.includes('Initiative A'),
+      ).toBe(true);
     });
   });
 });

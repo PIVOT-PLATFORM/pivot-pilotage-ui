@@ -18,6 +18,7 @@ function makeInitiative(overrides: Partial<Initiative> = {}): Initiative {
     fuzzyPeriodEnd: '2026-03-31', // Q1 2026 -> axis index 0
     temporalPrecision: 'QUARTER',
     revision: 0,
+    horizon: 'NOW',
     ...overrides,
   };
 }

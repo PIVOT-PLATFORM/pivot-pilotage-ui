@@ -103,81 +103,117 @@
       <app-roadmap-share-panel [projectRef]="projectRef" />
     }
 
-    @if (lanes().length === 0 && milestones().length === 0) {
-      <p class="rm-board__empty">{{ 'roadmap.board.noLanes' | transloco }}</p>
+    <!-- US22.3.3 — bascule entre la vue temporelle et la vue Now/Next/Later : même jeu
+         d'initiatives, changement de rendu uniquement (voir TSDoc du composant). -->
+    <div
+      class="rm-board__view-toggle"
+      role="group"
+      [attr.aria-label]="'roadmap.board.viewMode.label' | transloco"
+    >
+      <button type="button" [attr.aria-pressed]="viewMode() === 'TIMELINE'" (click)="setViewMode('TIMELINE')">
+        {{ 'roadmap.board.viewMode.options.TIMELINE' | transloco }}
+      </button>
+      <button
+        type="button"
+        [attr.aria-pressed]="viewMode() === 'NOW_NEXT_LATER'"
+        (click)="setViewMode('NOW_NEXT_LATER')"
+      >
+        {{ 'roadmap.board.viewMode.options.NOW_NEXT_LATER' | transloco }}
+      </button>
+    </div>
+
+    @if (viewMode() === 'NOW_NEXT_LATER') {
+      @if (horizonViewLoading()) {
+        <p class="rm-board__status" role="status">{{ 'roadmap.board.nowNextLater.loading' | transloco }}</p>
+      } @else if (horizonViewErrorKey()) {
+        <div class="rm-board__status rm-board__status--error" role="alert">
+          <p>{{ horizonViewErrorKey()! | transloco }}</p>
+          <button type="button" (click)="retryHorizonView()">{{ 'roadmap.board.retry' | transloco }}</button>
+        </div>
+      } @else if (horizonView(); as view) {
+        <app-now-next-later-board [view]="view" (horizonChange)="onHorizonChange($event.initiative, $event.horizon)" />
+      }
+
+      @if (horizonErrorKey()) {
+        <p class="rm-board__error" role="alert">{{ horizonErrorKey()! | transloco }}</p>
+      }
     } @else {
-      <div class="rm-board__scale">
-        <label for="rm-time-scale">{{ 'roadmap.board.timeScale.label' | transloco }}</label>
-        <select id="rm-time-scale" [value]="timeScale()" (change)="onTimeScaleChange($event)">
-          <option value="MONTH">{{ 'roadmap.board.timeScale.options.MONTH' | transloco }}</option>
-          <option value="QUARTER">{{ 'roadmap.board.timeScale.options.QUARTER' | transloco }}</option>
-          <option value="SEMESTER">{{ 'roadmap.board.timeScale.options.SEMESTER' | transloco }}</option>
-        </select>
-      </div>
-
-      <div class="rm-board__timeline" #roadmapCaptureArea>
-        <div class="rm-board__periods" [style.margin-left.px]="laneLabelWidthPx">
-          @for (period of periods(); track period.index) {
-            <div class="rm-board__period-cell" [style.width.px]="periodWidthPx()">{{ period.label }}</div>
-          }
+      @if (lanes().length === 0 && milestones().length === 0) {
+        <p class="rm-board__empty">{{ 'roadmap.board.noLanes' | transloco }}</p>
+      } @else {
+        <div class="rm-board__scale">
+          <label for="rm-time-scale">{{ 'roadmap.board.timeScale.label' | transloco }}</label>
+          <select id="rm-time-scale" [value]="timeScale()" (change)="onTimeScaleChange($event)">
+            <option value="MONTH">{{ 'roadmap.board.timeScale.options.MONTH' | transloco }}</option>
+            <option value="QUARTER">{{ 'roadmap.board.timeScale.options.QUARTER' | transloco }}</option>
+            <option value="SEMESTER">{{ 'roadmap.board.timeScale.options.SEMESTER' | transloco }}</option>
+          </select>
         </div>
 
-        <!-- US22.3.4 — own row, distinct from the per-lane bars overlay below: a milestone is
-             punctual and may have no laneId at all (see class TSDoc). -->
-        <div
-          class="rm-board__milestones-row"
-          [style.margin-left.px]="laneLabelWidthPx"
-          role="group"
-          [attr.aria-label]="'roadmap.board.milestones.rowLabel' | transloco"
-        >
-          @for (milestone of milestones(); track milestone.id) {
-            <app-milestone-marker
-              [milestone]="milestone"
-              [periods]="periods()"
-              [periodWidthPx]="periodWidthPx()"
-              [laneName]="laneNameFor(milestone.laneId)"
-              (dateChange)="onMilestoneDateChange(milestone, $event)"
-            />
-          }
-        </div>
-
-        @if (lanes().length === 0) {
-          <p class="rm-board__empty">{{ 'roadmap.board.noLanes' | transloco }}</p>
-        } @else {
-          <div class="rm-board__lanes">
-            @for (lane of lanes(); track lane.id) {
-              <div class="rm-lane">
-                <div class="rm-lane__label" [style.width.px]="laneLabelWidthPx">{{ lane.name }}</div>
-                <div
-                  class="rm-lane__track"
-                  [style.width.px]="axisWidthPx()"
-                  [style.background-size]="periodWidthPx() + 'px 100%'"
-                ></div>
-              </div>
+        <div class="rm-board__timeline" #roadmapCaptureArea>
+          <div class="rm-board__periods" [style.margin-left.px]="laneLabelWidthPx">
+            @for (period of periods(); track period.index) {
+              <div class="rm-board__period-cell" [style.width.px]="periodWidthPx()">{{ period.label }}</div>
             }
           </div>
 
-          <div class="rm-board__bars" [style.left.px]="laneLabelWidthPx">
-            @for (initiative of initiatives(); track initiative.id) {
-              <app-initiative-bar
-                [initiative]="initiative"
+          <!-- US22.3.4 — own row, distinct from the per-lane bars overlay below: a milestone is
+               punctual and may have no laneId at all (see class TSDoc). -->
+          <div
+            class="rm-board__milestones-row"
+            [style.margin-left.px]="laneLabelWidthPx"
+            role="group"
+            [attr.aria-label]="'roadmap.board.milestones.rowLabel' | transloco"
+          >
+            @for (milestone of milestones(); track milestone.id) {
+              <app-milestone-marker
+                [milestone]="milestone"
                 [periods]="periods()"
                 [periodWidthPx]="periodWidthPx()"
-                [laneIds]="laneIds()"
-                (placementChange)="onPlacementChange(initiative, $event)"
+                [laneName]="laneNameFor(milestone.laneId)"
+                (dateChange)="onMilestoneDateChange(milestone, $event)"
               />
             }
           </div>
-        }
-      </div>
-    }
 
-    @if (placementErrorKey()) {
-      <p class="rm-board__error" role="alert">{{ placementErrorKey()! | transloco }}</p>
-    }
+          @if (lanes().length === 0) {
+            <p class="rm-board__empty">{{ 'roadmap.board.noLanes' | transloco }}</p>
+          } @else {
+            <div class="rm-board__lanes">
+              @for (lane of lanes(); track lane.id) {
+                <div class="rm-lane">
+                  <div class="rm-lane__label" [style.width.px]="laneLabelWidthPx">{{ lane.name }}</div>
+                  <div
+                    class="rm-lane__track"
+                    [style.width.px]="axisWidthPx()"
+                    [style.background-size]="periodWidthPx() + 'px 100%'"
+                  ></div>
+                </div>
+              }
+            </div>
 
-    @if (milestoneDateErrorKey()) {
-      <p class="rm-board__error" role="alert">{{ milestoneDateErrorKey()! | transloco }}</p>
+            <div class="rm-board__bars" [style.left.px]="laneLabelWidthPx">
+              @for (initiative of initiatives(); track initiative.id) {
+                <app-initiative-bar
+                  [initiative]="initiative"
+                  [periods]="periods()"
+                  [periodWidthPx]="periodWidthPx()"
+                  [laneIds]="laneIds()"
+                  (placementChange)="onPlacementChange(initiative, $event)"
+                />
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @if (placementErrorKey()) {
+        <p class="rm-board__error" role="alert">{{ placementErrorKey()! | transloco }}</p>
+      }
+
+      @if (milestoneDateErrorKey()) {
+        <p class="rm-board__error" role="alert">{{ milestoneDateErrorKey()! | transloco }}</p>
+      }
     }
 
     <p class="rm-sr-only" aria-live="polite">{{ announcement() }}</p>

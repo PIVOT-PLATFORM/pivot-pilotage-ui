@@ -6,10 +6,12 @@ import {
   CreateInitiativeRequest,
   CreateLaneRequest,
   CreateMilestoneRequest,
+  HorizonViewResponse,
   Initiative,
   Lane,
   Milestone,
   RoadmapProjectRef,
+  UpdateInitiativeHorizonRequest,
   UpdateInitiativePlacementRequest,
   UpdateMilestoneRequest,
 } from './roadmap.models';
@@ -46,6 +48,15 @@ import {
  * which the caller (`RoadmapBoardComponent`) turns into a rollback + explicit error, effectively
  * leaving that user in a read-only view without this service or any component needing to know
  * the user's role itself (no client-side role gating — see that component's TSDoc).
+ *
+ * **Now/Next/Later (US22.3.3 — "Vue Now/Next/Later").** `getHorizonView`/`updateHorizon` extend
+ * this same contract (`pivot-pilotage-core#39`) with the same conventions. `getHorizonView` is a
+ * server-computed grouping of the exact same initiatives already returned by `listInitiatives`
+ * (each now also carrying its own `horizon` field, see `Initiative`'s TSDoc) — the grouping
+ * (including the "never lose an untriaged initiative" `unbucketed` guarantee) is deliberately
+ * fetched from the backend rather than re-derived client-side, so this bucketing rule is defined
+ * in exactly one place. `updateHorizon` is the sole write path for an initiative's bucket — same
+ * fail-closed `RoadmapEditPolicy`/rollback posture as every other write here.
  */
 @Injectable({ providedIn: 'root' })
 export class RoadmapApiService {
@@ -147,5 +158,34 @@ export class RoadmapApiService {
     request: UpdateMilestoneRequest,
   ): Observable<Milestone> {
     return this.http.patch<Milestone>(`${this.baseUrl(ref)}/milestones/${milestoneId}`, request);
+  }
+
+  /**
+   * Fetches the project's initiatives grouped by Now/Next/Later bucket (US22.3.3), plus every
+   * not-yet-triaged initiative under `unbucketed` (never dropped — see `HorizonViewResponse`'s
+   * TSDoc). Same underlying dataset as `listInitiatives`, just server-grouped — see class TSDoc.
+   *
+   * @throws HttpErrorResponse 404 if the tenant/team/project triplet resolves to no visible project
+   */
+  getHorizonView(ref: RoadmapProjectRef): Observable<HorizonViewResponse> {
+    return this.http.get<HorizonViewResponse>(`${this.baseUrl(ref)}/horizon-view`);
+  }
+
+  /**
+   * Moves an initiative to a different Now/Next/Later bucket. `horizon` is mandatory (unlike
+   * `updatePlacement`/`updateMilestone`'s every-field-optional convention) — there is no "leave
+   * unchanged" case for this single-field endpoint, and no way to clear it back to `null` (see
+   * `UpdateInitiativeHorizonRequest`'s TSDoc).
+   *
+   * @throws HttpErrorResponse 400 (`horizon` null/absent — never sent by this service's own
+   *         callers, which always resolve a concrete `Horizon` value before calling this), 403
+   *         (unauthorized — fail-closed today, see class TSDoc), 404 (project or initiative not visible)
+   */
+  updateHorizon(
+    ref: RoadmapProjectRef,
+    initiativeId: number,
+    request: UpdateInitiativeHorizonRequest,
+  ): Observable<Initiative> {
+    return this.http.patch<Initiative>(`${this.baseUrl(ref)}/initiatives/${initiativeId}/horizon`, request);
   }
 }

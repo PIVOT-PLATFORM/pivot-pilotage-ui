@@ -1,0 +1,60 @@
+.nnl-board {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  overflow-x: auto;
+}
+
+.nnl-column {
+  flex: none;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  min-height: 120px;
+
+  &--unbucketed {
+    background: #f1f3f4;
+    border: 1px dashed #9aa0a6;
+  }
+}
+
+.nnl-column__header {
+  font-size: 0.9rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.nnl-column__empty {
+  color: #5f6368;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.nnl-card {
+  box-sizing: border-box;
+  padding: 0.5rem 0.75rem;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  cursor: grab;
+  touch-action: none;
+  font-size: 0.85rem;
+  user-select: none;
+
+  &--dragging {
+    cursor: grabbing;
+    opacity: 0.85;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 35%);
+    z-index: 1;
+    position: relative;
+  }
+}
+
+.nnl-card:focus-visible {
+  outline: 3px solid #202124;
+  outline-offset: 2px;
+}

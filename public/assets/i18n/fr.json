@@ -13,6 +13,13 @@
           "SEMESTER": "Semestre"
         }
       },
+      "viewMode": {
+        "label": "Vue",
+        "options": {
+          "TIMELINE": "Temporelle",
+          "NOW_NEXT_LATER": "Now / Next / Later"
+        }
+      },
       "load": {
         "errors": {
           "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",
@@ -92,6 +99,34 @@
           "FORBIDDEN": "Vous n'avez pas les droits pour déplacer ce jalon.",
           "NOT_FOUND": "Ce projet ou ce jalon est introuvable.",
           "GENERIC": "Impossible de mettre à jour le jalon."
+        }
+      },
+      "nowNextLater": {
+        "loading": "Chargement de la vue Now/Next/Later…",
+        "empty": "Aucune initiative dans ce bucket.",
+        "load": {
+          "errors": {
+            "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",
+            "GENERIC": "Impossible de charger la vue Now/Next/Later."
+          }
+        },
+        "horizonLabel": {
+          "NOW": "Now",
+          "NEXT": "Next",
+          "LATER": "Later",
+          "UNBUCKETED": "Non trié"
+        },
+        "card": {
+          "ariaLabel": "Initiative {{name}}, horizon : {{horizon}}. Flèches gauche/droite pour déplacer entre les buckets.",
+          "announceMoved": "{{name}} déplacée vers {{horizon}}.",
+          "announceReverted": "{{name}} : déplacement annulé, une erreur est survenue."
+        }
+      },
+      "horizon": {
+        "errors": {
+          "FORBIDDEN": "Vous n'avez pas les droits pour changer l'horizon de cette initiative.",
+          "NOT_FOUND": "Ce projet ou cette initiative est introuvable.",
+          "GENERIC": "Impossible de mettre à jour l'horizon de l'initiative."
         }
       }
     },

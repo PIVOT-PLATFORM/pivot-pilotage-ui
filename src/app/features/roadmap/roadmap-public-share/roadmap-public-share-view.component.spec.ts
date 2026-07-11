@@ -25,6 +25,7 @@ const VIEW: RoadmapShareViewResponse = {
       fuzzyPeriodEnd: '2026-02-28',
       temporalPrecision: 'QUARTER',
       revision: 0,
+      horizon: 'NOW',
     },
   ],
 };
