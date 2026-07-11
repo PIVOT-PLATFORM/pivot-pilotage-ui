@@ -1,0 +1,104 @@
+.cal-mgr {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.cal-mgr__title {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.cal-mgr__create-form,
+.cal-mgr__edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+}
+
+.cal-mgr__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cal-mgr__working-days,
+.cal-mgr__ranges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border: 1px solid #e8eaed;
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+.cal-mgr__day-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.cal-mgr__range-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-basis: 100%;
+}
+
+.cal-mgr__error {
+  margin: 0;
+  color: #b3261e;
+}
+
+.cal-mgr__status {
+  padding: 0.5rem 0;
+
+  &--error {
+    color: #b3261e;
+  }
+}
+
+.cal-mgr__empty {
+  color: #5f6368;
+}
+
+.cal-mgr__table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.5rem;
+    border-bottom: 1px solid #e8eaed;
+    vertical-align: top;
+  }
+}
+
+.cal-mgr__day-chip,
+.cal-mgr__range-chip {
+  display: inline-block;
+  margin: 0 0.25rem 0.25rem 0;
+  padding: 0.1rem 0.4rem;
+  background: #f1f3f4;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.cal-mgr__edit-row td,
+.cal-mgr__exceptions-row td {
+  border-bottom: 2px solid #dadce0;
+  background: #f8f9fa;
+}
+
+// Contraste vérifié WCAG 2.1 AA sur inputs/boutons/checkboxes interactifs.
+.cal-mgr input:focus-visible,
+.cal-mgr select:focus-visible,
+.cal-mgr button:focus-visible {
+  outline: 3px solid #202124;
+  outline-offset: 2px;
+}

@@ -1,0 +1,197 @@
+<div class="cal-mgr">
+  <h2 class="cal-mgr__title">{{ 'calendar.manager.title' | transloco }}</h2>
+
+  <form class="cal-mgr__create-form" (submit)="$event.preventDefault(); submitCreate()">
+    <h3>{{ 'calendar.manager.create.heading' | transloco }}</h3>
+
+    <div class="cal-mgr__field">
+      <label for="cal-create-scope">{{ 'calendar.manager.create.scopeLabel' | transloco }}</label>
+      <select id="cal-create-scope" [value]="createScope()" (change)="onCreateScopeChange($event)">
+        <option value="PROJECT">{{ 'calendar.scopes.PROJECT' | transloco }}</option>
+        <option value="TASK">{{ 'calendar.scopes.TASK' | transloco }}</option>
+        <option value="RESOURCE">{{ 'calendar.scopes.RESOURCE' | transloco }}</option>
+      </select>
+    </div>
+
+    <div class="cal-mgr__field">
+      <label for="cal-create-project-id">{{ 'calendar.manager.create.projectIdLabel' | transloco }}</label>
+      <input id="cal-create-project-id" type="text" inputmode="numeric" [value]="createProjectIdInput()" (input)="onCreateProjectIdInput($event)" />
+    </div>
+
+    <div class="cal-mgr__field">
+      <label for="cal-create-name">{{ 'calendar.manager.create.nameLabel' | transloco }}</label>
+      <input id="cal-create-name" type="text" [value]="createName()" (input)="onCreateNameInput($event)" />
+    </div>
+
+    <fieldset class="cal-mgr__working-days">
+      <legend>{{ 'calendar.manager.workingDaysLabel' | transloco }}</legend>
+      @for (day of isoWeekDays; track day) {
+        <label class="cal-mgr__day-checkbox">
+          <input type="checkbox" [checked]="createWorkingDays().includes(day)" (change)="toggleCreateWorkingDay(day)" />
+          {{ dayLabelKey(day) | transloco }}
+        </label>
+      }
+    </fieldset>
+
+    <fieldset class="cal-mgr__ranges">
+      <legend>{{ 'calendar.manager.rangesLabel' | transloco }}</legend>
+      @for (range of createRanges(); track $index) {
+        <div class="cal-mgr__range-row">
+          <label [for]="'cal-create-start-' + $index">{{ 'calendar.manager.range.startLabel' | transloco }}</label>
+          <input
+            [id]="'cal-create-start-' + $index"
+            type="number"
+            min="0"
+            max="23"
+            [value]="range.startHour"
+            (input)="updateCreateRange($index, 'startHour', $event)"
+          />
+          <label [for]="'cal-create-end-' + $index">{{ 'calendar.manager.range.endLabel' | transloco }}</label>
+          <input
+            [id]="'cal-create-end-' + $index"
+            type="number"
+            min="1"
+            max="24"
+            [value]="range.endHour"
+            (input)="updateCreateRange($index, 'endHour', $event)"
+          />
+          @if (createRanges().length > 1) {
+            <button type="button" (click)="removeCreateRange($index)">{{ 'calendar.manager.range.remove' | transloco }}</button>
+          }
+        </div>
+      }
+      <button type="button" (click)="addCreateRange()">{{ 'calendar.manager.range.add' | transloco }}</button>
+    </fieldset>
+
+    <button type="submit" [disabled]="creating()">{{ 'calendar.manager.create.submit' | transloco }}</button>
+    @if (createErrorKey()) {
+      <p class="cal-mgr__error" role="alert">{{ createErrorKey()! | transloco }}</p>
+    }
+  </form>
+
+  @if (loading()) {
+    <p class="cal-mgr__status" role="status">{{ 'calendar.manager.list.loading' | transloco }}</p>
+  } @else if (loadErrorKey()) {
+    <div class="cal-mgr__status cal-mgr__status--error" role="alert">
+      <p>{{ loadErrorKey()! | transloco }}</p>
+      <button type="button" (click)="retryLoad()">{{ 'calendar.manager.list.retry' | transloco }}</button>
+    </div>
+  } @else if (calendars().length === 0) {
+    <p class="cal-mgr__empty">{{ 'calendar.manager.list.empty' | transloco }}</p>
+  } @else {
+    <table class="cal-mgr__table">
+      <thead>
+        <tr>
+          <th scope="col">{{ 'calendar.manager.list.columns.name' | transloco }}</th>
+          <th scope="col">{{ 'calendar.manager.list.columns.scope' | transloco }}</th>
+          <th scope="col">{{ 'calendar.manager.list.columns.workingDays' | transloco }}</th>
+          <th scope="col">{{ 'calendar.manager.list.columns.ranges' | transloco }}</th>
+          <th scope="col">{{ 'calendar.manager.list.columns.actions' | transloco }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (calendar of calendars(); track calendar.calendarId) {
+          <tr>
+            <td>{{ calendar.name }}</td>
+            <td>{{ 'calendar.scopes.' + calendar.scope | transloco }}</td>
+            <td>
+              @for (day of calendar.workingDays; track day) {
+                <span class="cal-mgr__day-chip">{{ dayLabelKey(day) | transloco }}</span>
+              }
+            </td>
+            <td>
+              @for (range of calendar.ranges; track $index) {
+                <span class="cal-mgr__range-chip">{{ formatHour(range.startHour) }}–{{ formatHour(range.endHour) }}</span>
+              }
+            </td>
+            <td>
+              <button type="button" (click)="startEdit(calendar)">{{ 'calendar.manager.list.actions.edit' | transloco }}</button>
+              <button type="button" (click)="toggleExceptions(calendar.calendarId)">
+                {{ 'calendar.manager.list.actions.exceptions' | transloco }}
+              </button>
+              @if (confirmingDeleteId() === calendar.calendarId) {
+                <span>{{ 'calendar.manager.delete.confirmPrompt' | transloco }}</span>
+                <button type="button" (click)="confirmDelete(calendar.calendarId)">
+                  {{ 'calendar.manager.delete.confirmButton' | transloco }}
+                </button>
+                <button type="button" (click)="cancelDelete()">{{ 'calendar.manager.delete.cancelButton' | transloco }}</button>
+              } @else {
+                <button type="button" (click)="requestDelete(calendar.calendarId)">
+                  {{ 'calendar.manager.delete.button' | transloco }}
+                </button>
+              }
+            </td>
+          </tr>
+          @if (editingCalendarId() === calendar.calendarId) {
+            <tr class="cal-mgr__edit-row">
+              <td colspan="5">
+                <form class="cal-mgr__edit-form" (submit)="$event.preventDefault(); submitUpdate()">
+                  <div class="cal-mgr__field">
+                    <label [for]="'cal-edit-name-' + calendar.calendarId">{{ 'calendar.manager.edit.nameLabel' | transloco }}</label>
+                    <input [id]="'cal-edit-name-' + calendar.calendarId" type="text" [value]="editName()" (input)="onEditNameInput($event)" />
+                  </div>
+
+                  <fieldset class="cal-mgr__working-days">
+                    <legend>{{ 'calendar.manager.workingDaysLabel' | transloco }}</legend>
+                    @for (day of isoWeekDays; track day) {
+                      <label class="cal-mgr__day-checkbox">
+                        <input type="checkbox" [checked]="editWorkingDays().includes(day)" (change)="toggleEditWorkingDay(day)" />
+                        {{ dayLabelKey(day) | transloco }}
+                      </label>
+                    }
+                  </fieldset>
+
+                  <fieldset class="cal-mgr__ranges">
+                    <legend>{{ 'calendar.manager.rangesLabel' | transloco }}</legend>
+                    @for (range of editRanges(); track $index) {
+                      <div class="cal-mgr__range-row">
+                        <label [for]="'cal-edit-start-' + $index">{{ 'calendar.manager.range.startLabel' | transloco }}</label>
+                        <input
+                          [id]="'cal-edit-start-' + $index"
+                          type="number"
+                          min="0"
+                          max="23"
+                          [value]="range.startHour"
+                          (input)="updateEditRange($index, 'startHour', $event)"
+                        />
+                        <label [for]="'cal-edit-end-' + $index">{{ 'calendar.manager.range.endLabel' | transloco }}</label>
+                        <input
+                          [id]="'cal-edit-end-' + $index"
+                          type="number"
+                          min="1"
+                          max="24"
+                          [value]="range.endHour"
+                          (input)="updateEditRange($index, 'endHour', $event)"
+                        />
+                        @if (editRanges().length > 1) {
+                          <button type="button" (click)="removeEditRange($index)">{{ 'calendar.manager.range.remove' | transloco }}</button>
+                        }
+                      </div>
+                    }
+                    <button type="button" (click)="addEditRange()">{{ 'calendar.manager.range.add' | transloco }}</button>
+                  </fieldset>
+
+                  <button type="submit" [disabled]="updating()">{{ 'calendar.manager.edit.submit' | transloco }}</button>
+                  <button type="button" (click)="cancelEdit()">{{ 'calendar.manager.edit.cancel' | transloco }}</button>
+                  @if (updateErrorKey()) {
+                    <p class="cal-mgr__error" role="alert">{{ updateErrorKey()! | transloco }}</p>
+                  }
+                </form>
+              </td>
+            </tr>
+          }
+          @if (exceptionsCalendarId() === calendar.calendarId) {
+            <tr class="cal-mgr__exceptions-row">
+              <td colspan="5">
+                <app-calendar-exceptions-panel [teamRef]="teamRef" [calendarId]="calendar.calendarId" />
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+    @if (deleteErrorKey()) {
+      <p class="cal-mgr__error" role="alert">{{ deleteErrorKey()! | transloco }}</p>
+    }
+  }
+</div>
