@@ -327,3 +327,117 @@ test.describe('Jalons stratégiques (US22.3.4)', () => {
     );
   });
 });
+
+test.describe('Vue Now/Next/Later (US22.3.3)', () => {
+  test('bascule vers la vue en 3 colonnes et déplace une initiative au clavier', async ({ page }) => {
+    await stubRoadmap(page, {
+      lanes: [{ id: 10, name: 'Thème A', position: 0 }],
+      initiatives: [
+        {
+          id: 100,
+          laneId: 10,
+          name: 'Initiative A',
+          fuzzyPeriodStart: null,
+          fuzzyPeriodEnd: null,
+          temporalPrecision: 'QUARTER',
+          revision: 0,
+          horizon: 'NOW',
+        },
+      ],
+    });
+    await page.route(`${API_BASE}/horizon-view`, route =>
+      fulfillJson(route, 200, {
+        buckets: [
+          {
+            horizon: 'NOW',
+            initiatives: [
+              {
+                id: 100,
+                laneId: 10,
+                name: 'Initiative A',
+                fuzzyPeriodStart: null,
+                fuzzyPeriodEnd: null,
+                temporalPrecision: 'QUARTER',
+                revision: 0,
+                horizon: 'NOW',
+              },
+            ],
+          },
+          { horizon: 'NEXT', initiatives: [] },
+          { horizon: 'LATER', initiatives: [] },
+        ],
+        unbucketed: [],
+      }),
+    );
+    await page.route(`${API_BASE}/initiatives/100/horizon`, async route => {
+      const body = route.request().postDataJSON() as { horizon: string };
+      await fulfillJson(route, 200, {
+        id: 100,
+        laneId: 10,
+        name: 'Initiative A',
+        fuzzyPeriodStart: null,
+        fuzzyPeriodEnd: null,
+        temporalPrecision: 'QUARTER',
+        revision: 1,
+        horizon: body.horizon,
+      });
+    });
+
+    await page.goto(TENANT_PATH);
+
+    // AC1 — bascule vers la vue Now/Next/Later : même jeu d'initiatives, changement de rendu.
+    await page.getByRole('button', { name: 'Now / Next / Later' }).click();
+
+    const card = page.getByRole('button', { name: /Initiative A/ });
+    await expect(card).toBeVisible();
+
+    // AC2 + A11y AC — déplacement au clavier, pas uniquement au glisser-déposer souris.
+    await card.focus();
+    await page.keyboard.press('ArrowRight');
+
+    await expect(page.getByRole('alert')).toHaveCount(0);
+  });
+
+  test("Security AC: surfaces a permission error when the backend denies the horizon write (403)", async ({
+    page,
+  }) => {
+    await stubRoadmap(page, {
+      lanes: [{ id: 10, name: 'Thème A', position: 0 }],
+      initiatives: [],
+    });
+    const initiative = {
+      id: 100,
+      laneId: 10,
+      name: 'Initiative A',
+      fuzzyPeriodStart: null,
+      fuzzyPeriodEnd: null,
+      temporalPrecision: 'QUARTER',
+      revision: 0,
+      horizon: 'NOW',
+    };
+    await page.route(`${API_BASE}/horizon-view`, route =>
+      fulfillJson(route, 200, {
+        buckets: [
+          { horizon: 'NOW', initiatives: [initiative] },
+          { horizon: 'NEXT', initiatives: [] },
+          { horizon: 'LATER', initiatives: [] },
+        ],
+        unbucketed: [],
+      }),
+    );
+    await page.route(`${API_BASE}/initiatives/100/horizon`, route => route.fulfill({ status: 403 }));
+
+    await page.goto(TENANT_PATH);
+
+    await page.getByRole('button', { name: 'Now / Next / Later' }).click();
+    const card = page.getByRole('button', { name: /Initiative A/ });
+    await card.focus();
+    await page.keyboard.press('ArrowRight');
+
+    await expect(page.getByRole('alert')).toContainText(
+      "Vous n'avez pas les droits pour changer l'horizon de cette initiative.",
+    );
+    // Rolled back — the initiative is still visible.
+    await expect(card).toBeVisible();
+  });
+});
