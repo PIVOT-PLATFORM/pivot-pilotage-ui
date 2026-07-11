@@ -1,6 +1,5 @@
-import { Injectable } from '@angular/core';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
+import { Injectable, inject } from '@angular/core';
+import { HTML2CANVAS, JS_PDF_CTOR } from './roadmap-capture.tokens';
 
 /**
  * Client-side export of the roadmap's *currently rendered* DOM to PNG/PDF (US22.3.5 — "Partage &
@@ -31,9 +30,16 @@ import { jsPDF } from 'jspdf';
  * **No error handling here** — same "propagate, don't swallow" philosophy as this feature's API
  * services: `html2canvas`/`jsPDF` failures (e.g. a tainted canvas from a cross-origin image) are
  * rethrown as-is; `RoadmapExportButtonComponent` catches and surfaces a generic, translated error.
+ *
+ * `html2canvas`/`jsPDF` are consumed via the {@link HTML2CANVAS}/{@link JS_PDF_CTOR} DI tokens
+ * (`roadmap-capture.tokens.ts`), not imported directly — see that file's TSDoc for why (testability
+ * across this repo's Angular CLI + Vitest integration).
  */
 @Injectable({ providedIn: 'root' })
 export class RoadmapCaptureService {
+  private readonly html2canvas = inject(HTML2CANVAS);
+  private readonly JsPdf = inject(JS_PDF_CTOR);
+
   /**
    * Captures `element` and downloads it as a PNG named `${filenameBase}.png`.
    *
@@ -54,7 +60,7 @@ export class RoadmapCaptureService {
   async exportPdf(element: HTMLElement, filenameBase: string): Promise<void> {
     const canvas = await this.captureCanvas(element);
     const orientation = canvas.width >= canvas.height ? 'landscape' : 'portrait';
-    const pdf = new jsPDF({ orientation, unit: 'px', format: [canvas.width, canvas.height] });
+    const pdf = new this.JsPdf({ orientation, unit: 'px', format: [canvas.width, canvas.height] });
     pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width, canvas.height);
     pdf.save(`${filenameBase}.pdf`);
   }
@@ -62,7 +68,7 @@ export class RoadmapCaptureService {
   private captureCanvas(element: HTMLElement): Promise<HTMLCanvasElement> {
     // A plain white background avoids a transparent PNG rendering as black in viewers that don't
     // honour alpha (and gives the PDF page a real background instead of none).
-    return html2canvas(element, { backgroundColor: '#ffffff' });
+    return this.html2canvas(element, { backgroundColor: '#ffffff' });
   }
 
   private downloadDataUrl(dataUrl: string, filename: string): void {

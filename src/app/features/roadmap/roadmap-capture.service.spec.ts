@@ -1,23 +1,11 @@
+import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-// `vi.hoisted` — the mock factories below (`vi.mock`) are hoisted above these imports by
-// Vitest, so any variable they reference must itself be created inside a `vi.hoisted` block.
-const { html2canvasMock, jsPdfCtorMock, jsPdfInstanceMock } = vi.hoisted(() => {
-  const html2canvasMock = vi.fn();
-  const jsPdfInstanceMock = { addImage: vi.fn(), save: vi.fn() };
-  // `jsPDF` is normally a class instantiated with `new`. Returning an object from a constructor
-  // function makes `new` yield that object instead of the implicit `this` — the standard trick
-  // for mocking a class with a plain function.
-  const jsPdfCtorMock = vi.fn(function jsPdfCtor() {
-    return jsPdfInstanceMock;
-  });
-  return { html2canvasMock, jsPdfCtorMock, jsPdfInstanceMock };
-});
-
-vi.mock('html2canvas', () => ({ default: html2canvasMock }));
-vi.mock('jspdf', () => ({ jsPDF: jsPdfCtorMock }));
-
+import { HTML2CANVAS, JS_PDF_CTOR } from './roadmap-capture.tokens';
 import { RoadmapCaptureService } from './roadmap-capture.service';
+
+// Substituted via Angular DI (`HTML2CANVAS`/`JS_PDF_CTOR` tokens), never `vi.mock` — see
+// `roadmap-capture.tokens.ts`'s TSDoc for why module-mocking these two libraries isn't reliable
+// under this repo's Angular CLI + Vitest integration.
 
 function makeCanvas(width: number, height: number, dataUrl = 'data:image/png;base64,FAKE'): HTMLCanvasElement {
   return { width, height, toDataURL: vi.fn(() => dataUrl) } as unknown as HTMLCanvasElement;
@@ -25,12 +13,30 @@ function makeCanvas(width: number, height: number, dataUrl = 'data:image/png;bas
 
 describe('RoadmapCaptureService', () => {
   let service: RoadmapCaptureService;
+  let html2canvasMock: ReturnType<typeof vi.fn>;
+  let jsPdfCtorMock: ReturnType<typeof vi.fn>;
+  let jsPdfInstanceMock: { addImage: ReturnType<typeof vi.fn>; save: ReturnType<typeof vi.fn> };
   let capturedAnchors: HTMLAnchorElement[];
   let clickSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    service = new RoadmapCaptureService();
+    html2canvasMock = vi.fn();
+    jsPdfInstanceMock = { addImage: vi.fn(), save: vi.fn() };
+    // `jsPDF` is normally a class instantiated with `new`. Returning an object from a constructor
+    // function makes `new` yield that object instead of the implicit `this` — the standard trick
+    // for stubbing a class with a plain function.
+    jsPdfCtorMock = vi.fn(function jsPdfCtor() {
+      return jsPdfInstanceMock;
+    });
+
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: HTML2CANVAS, useValue: html2canvasMock },
+        { provide: JS_PDF_CTOR, useValue: jsPdfCtorMock },
+      ],
+    });
+    service = TestBed.inject(RoadmapCaptureService);
+
     capturedAnchors = [];
     clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
       this: HTMLAnchorElement,
@@ -77,7 +83,14 @@ describe('RoadmapCaptureService', () => {
 
       expect(html2canvasMock).toHaveBeenCalledWith(element, { backgroundColor: '#ffffff' });
       expect(jsPdfCtorMock).toHaveBeenCalledWith({ orientation: 'landscape', unit: 'px', format: [800, 400] });
-      expect(jsPdfInstanceMock.addImage).toHaveBeenCalledWith(expect.stringContaining('data:image/png'), 'PNG', 0, 0, 800, 400);
+      expect(jsPdfInstanceMock.addImage).toHaveBeenCalledWith(
+        expect.stringContaining('data:image/png'),
+        'PNG',
+        0,
+        0,
+        800,
+        400,
+      );
       expect(jsPdfInstanceMock.save).toHaveBeenCalledWith('roadmap.pdf');
     });
 
