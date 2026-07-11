@@ -3,12 +3,12 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { Initiative, InitiativePlacementChange } from '../data-access/roadmap.models';
 import {
   LANE_HEIGHT_PX,
-  QUARTER_WIDTH_PX,
-  QuarterCell,
-  dateForQuarterIndex,
+  PERIOD_WIDTH_PX,
+  PeriodCell,
+  dateForPeriodIndex,
+  periodIndexForDate,
   pixelsToLaneDelta,
-  pixelsToQuarterDelta,
-  quarterIndexForDate,
+  pixelsToPeriodDelta,
 } from '../roadmap-timeline';
 
 type DragMode = 'move' | 'resize-start' | 'resize-end';
@@ -16,9 +16,13 @@ type DragMode = 'move' | 'resize-start' | 'resize-end';
 /**
  * A single initiative "bar" on the roadmap-rapide board (US22.3.1) — a macro view of an
  * underlying `pilotage.task`, positioned on its lane's row by its approximate
- * (`fuzzyPeriodStart`/`fuzzyPeriodEnd`) period.
+ * (`fuzzyPeriodStart`/`fuzzyPeriodEnd`) period, against whichever axis grain
+ * `RoadmapBoardComponent` currently has selected (US22.3.2 — "Échelle de temps floue":
+ * month/quarter/semester, see `roadmap-timeline.ts`'s `RoadmapTimeScale`). This component is
+ * entirely grain-agnostic — it only ever deals in axis-relative `PeriodCell` indices, never in
+ * a hard-coded "quarter" concept, so the board can hand it any grain's axis unmodified.
  *
- * **Mouse** — drag the bar body to move it (both horizontally across quarters and vertically
+ * **Mouse** — drag the bar body to move it (both horizontally across periods and vertically
  * across lanes); drag either edge handle to resize (shrink/grow) one boundary only. Modelled on
  * `pivot-collaboratif-ui`'s `WhiteboardCanvasComponent`: native Pointer Events (`setPointerCapture`
  * so the drag survives the cursor leaving the element — no Angular CDK DragDrop, absent
@@ -27,9 +31,10 @@ type DragMode = 'move' | 'resize-start' | 'resize-end';
  *
  * **Keyboard (WCAG 2.1 AA)** — the bar itself is the single focusable, interactive unit
  * (`tabindex="0"`, `role="button"`):
- * - `ArrowLeft`/`ArrowRight` — move the whole bar by one quarter (both bounds shift together).
+ * - `ArrowLeft`/`ArrowRight` — move the whole bar by one period of the board's current grain
+ *   (both bounds shift together).
  * - `Shift+ArrowLeft`/`Shift+ArrowRight` — resize: shrink/grow the **end** boundary by one
- *   quarter. This deliberately repurposes the "Shift" modifier compared to
+ *   period. This deliberately repurposes the "Shift" modifier compared to
  *   `WhiteboardCanvasComponent` (there, Shift only means "bigger step" on the *same* move
  *   operation): a roadmap bar has two genuinely distinct operations (move vs. resize) that a
  *   free-form canvas object doesn't, so Shift here switches operation rather than step size.
@@ -56,10 +61,12 @@ type DragMode = 'move' | 'resize-start' | 'resize-end';
 })
 export class InitiativeBarComponent {
   readonly initiative = input.required<Initiative>();
-  readonly quarters = input.required<readonly QuarterCell[]>();
+  /** The board's current time axis (US22.3.2) — any grain (month/quarter/semester), see class TSDoc. */
+  readonly periods = input.required<readonly PeriodCell[]>();
   /** Lane ids, ordered by row position — used to resolve/clamp a vertical (cross-lane) move. */
   readonly laneIds = input.required<readonly number[]>();
-  readonly quarterWidthPx = input<number>(QUARTER_WIDTH_PX);
+  /** Pixel width of one axis column at the board's current grain — defaults to the QUARTER grain's width for standalone usage (e.g. this component's own spec). */
+  readonly periodWidthPx = input<number>(PERIOD_WIDTH_PX.QUARTER);
   readonly laneHeightPx = input<number>(LANE_HEIGHT_PX);
 
   readonly placementChange = output<InitiativePlacementChange>();
@@ -71,12 +78,12 @@ export class InitiativeBarComponent {
 
   private readonly baseStartIndex = computed(() => {
     const start = this.initiative().fuzzyPeriodStart;
-    return start ? quarterIndexForDate(start, this.quarters()) : 0;
+    return start ? periodIndexForDate(start, this.periods()) : 0;
   });
 
   private readonly baseEndIndex = computed(() => {
     const end = this.initiative().fuzzyPeriodEnd;
-    return end ? quarterIndexForDate(end, this.quarters()) : this.baseStartIndex();
+    return end ? periodIndexForDate(end, this.periods()) : this.baseStartIndex();
   });
 
   private readonly baseLaneIndex = computed(() => {
@@ -88,16 +95,16 @@ export class InitiativeBarComponent {
   protected readonly displayEndIndex = computed(() => this.previewEndIndex() ?? this.baseEndIndex());
   protected readonly displayLaneIndex = computed(() => this.previewLaneIndex() ?? this.baseLaneIndex());
 
-  protected readonly leftPx = computed(() => this.displayStartIndex() * this.quarterWidthPx());
+  protected readonly leftPx = computed(() => this.displayStartIndex() * this.periodWidthPx());
   protected readonly widthPx = computed(
-    () => (this.displayEndIndex() - this.displayStartIndex() + 1) * this.quarterWidthPx(),
+    () => (this.displayEndIndex() - this.displayStartIndex() + 1) * this.periodWidthPx(),
   );
   protected readonly topPx = computed(() => this.displayLaneIndex() * this.laneHeightPx());
 
   protected readonly periodLabel = computed(() => {
-    const quarters = this.quarters();
-    const start = quarters[this.displayStartIndex()]?.label ?? '';
-    const end = quarters[this.displayEndIndex()]?.label ?? '';
+    const periods = this.periods();
+    const start = periods[this.displayStartIndex()]?.label ?? '';
+    const end = periods[this.displayEndIndex()]?.label ?? '';
     return start === end ? start : `${start} – ${end}`;
   });
 
@@ -155,12 +162,12 @@ export class InitiativeBarComponent {
 
     const deltaXPx = event.clientX - this.dragOriginClientX;
     const deltaYPx = event.clientY - this.dragOriginClientY;
-    const quarterDelta = pixelsToQuarterDelta(deltaXPx, this.quarterWidthPx());
-    const maxIndex = this.quarters().length - 1;
+    const periodDelta = pixelsToPeriodDelta(deltaXPx, this.periodWidthPx());
+    const maxIndex = this.periods().length - 1;
 
     if (this.dragMode === 'move') {
       const span = this.dragOriginEndIndex - this.dragOriginStartIndex;
-      const newStart = Math.min(Math.max(this.dragOriginStartIndex + quarterDelta, 0), maxIndex - span);
+      const newStart = Math.min(Math.max(this.dragOriginStartIndex + periodDelta, 0), maxIndex - span);
       this.previewStartIndex.set(newStart);
       this.previewEndIndex.set(newStart + span);
 
@@ -168,10 +175,10 @@ export class InitiativeBarComponent {
       const newLaneIndex = Math.min(Math.max(this.dragOriginLaneIndex + laneDelta, 0), this.laneIds().length - 1);
       this.previewLaneIndex.set(newLaneIndex);
     } else if (this.dragMode === 'resize-start') {
-      const newStart = Math.min(Math.max(this.dragOriginStartIndex + quarterDelta, 0), this.dragOriginEndIndex);
+      const newStart = Math.min(Math.max(this.dragOriginStartIndex + periodDelta, 0), this.dragOriginEndIndex);
       this.previewStartIndex.set(newStart);
     } else {
-      const newEnd = Math.max(Math.min(this.dragOriginEndIndex + quarterDelta, maxIndex), this.dragOriginStartIndex);
+      const newEnd = Math.max(Math.min(this.dragOriginEndIndex + periodDelta, maxIndex), this.dragOriginStartIndex);
       this.previewEndIndex.set(newEnd);
     }
   }
@@ -228,7 +235,7 @@ export class InitiativeBarComponent {
    * class TSDoc for the exact key mapping and the rationale for repurposing `Shift`.
    */
   protected onKeyDown(event: KeyboardEvent): void {
-    const maxIndex = this.quarters().length - 1;
+    const maxIndex = this.periods().length - 1;
     const start = this.displayStartIndex();
     const end = this.displayEndIndex();
     const laneIndex = this.displayLaneIndex();
@@ -264,11 +271,11 @@ export class InitiativeBarComponent {
   }
 
   private emitPlacement(startIndex: number, endIndex: number, laneIndex: number): void {
-    const quarters = this.quarters();
+    const periods = this.periods();
     this.placementChange.emit({
       laneId: this.laneIds()[laneIndex],
-      fuzzyPeriodStart: dateForQuarterIndex(startIndex, quarters, 'start'),
-      fuzzyPeriodEnd: dateForQuarterIndex(endIndex, quarters, 'end'),
+      fuzzyPeriodStart: dateForPeriodIndex(startIndex, periods, 'start'),
+      fuzzyPeriodEnd: dateForPeriodIndex(endIndex, periods, 'end'),
     });
   }
 }
