@@ -27,6 +27,15 @@ import { Routes } from '@angular/router';
  * n'est pas un oubli : un lien de partage doit être ouvrable par un destinataire sans compte
  * PIVOT ni session — voir `RoadmapPublicShareApiService`/`RoadmapPublicShareViewComponent` TSDoc.
  * Ne jamais lui adjoindre `moduleGuard`/`AuthGuard` un jour sans revalider ce choix.
+ *
+ * `tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/dependencies` — US22.4.3
+ * (dépendances typées FS/SS/FF/SF + retard/avance), première route du Gantt détaillé (F22.4) dans
+ * ce repo. Chemin identique au segment exposé par `pivot-pilotage-core`'s `WbsTaskController`
+ * (`.../gantt/dependencies`, même gap-era `tenantId`/`teamId`/`projectId` en path — voir
+ * `DependencyProjectRef` TSDoc). L'arbre WBS (US22.4.1a/b/c, `.../gantt/tree`) est un item
+ * parallèle séparément suivi (`feat/us22-4-1abc-wbs-tree-ui`) — cette route ne dépend pas de sa
+ * propre route à terme, les deux convergeront probablement sous un même parent `.../gantt` une
+ * fois les deux livrées.
  */
 export const routes: Routes = [
   {
@@ -43,6 +52,13 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/roadmap/roadmap-public-share/roadmap-public-share-view.component').then(
         (m) => m.RoadmapPublicShareViewComponent,
+      ),
+  },
+  {
+    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/dependencies',
+    loadComponent: () =>
+      import('./features/gantt/dependency-manager/dependency-manager.component').then(
+        (m) => m.DependencyManagerComponent,
       ),
   },
 ];

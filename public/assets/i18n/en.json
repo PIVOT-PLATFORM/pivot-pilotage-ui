@@ -205,5 +205,81 @@
         "ariaLabel": "Initiative {{name}}, {{period}}."
       }
     }
+  },
+  "gantt": {
+    "dependencies": {
+      "title": "Task dependencies",
+      "loading": "Loading tasks and dependencies…",
+      "retry": "Retry",
+      "empty": "No dependencies yet.",
+      "tasksEmpty": "This project doesn't have enough tasks yet to create a dependency (at least two tasks are needed).",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "This project could not be found, or you don't have access to it.",
+          "GENERIC": "Could not load the tasks and dependencies."
+        }
+      },
+      "columns": {
+        "predecessor": "Predecessor task",
+        "successor": "Successor task",
+        "type": "Link type",
+        "lag": "Lag / lead",
+        "actions": "Actions"
+      },
+      "linkType": {
+        "FS": "Finish → Start (FS)",
+        "SS": "Start → Start (SS)",
+        "FF": "Finish → Finish (FF)",
+        "SF": "Start → Finish (SF)"
+      },
+      "lagValue": "{{minutes}} min (≈ {{days}} working day(s))",
+      "create": {
+        "predecessorLabel": "Predecessor task",
+        "predecessorPlaceholder": "Choose a task…",
+        "successorLabel": "Successor task",
+        "successorPlaceholder": "Choose a task…",
+        "linkTypeLabel": "Link type",
+        "lagLabel": "Lag / lead (worked minutes, negative = lead)",
+        "lagHint": "1 working day = 480 minutes (standard 8h calendar) — indicative only.",
+        "submit": "Create dependency",
+        "errors": {
+          "TASKS_REQUIRED": "Choose a predecessor task and a successor task.",
+          "INVALID_DEPENDENCY": "A task cannot depend on itself.",
+          "INVALID_LAG": "The lag/lead must be a whole number of minutes.",
+          "DUPLICATE_DEPENDENCY": "This dependency already exists between these two tasks with this link type.",
+          "SCHEDULE_CYCLE": "This link would create a dependency cycle — creation refused.",
+          "FORBIDDEN": "You don't have permission to create a dependency on this project.",
+          "NOT_FOUND": "This project or one of the tasks could not be found.",
+          "GENERIC": "Could not create the dependency."
+        },
+        "announceCreated": "Dependency created: {{predecessor}} → {{successor}} ({{type}})."
+      },
+      "edit": {
+        "button": "Edit",
+        "confirmButton": "Save",
+        "cancelButton": "Cancel",
+        "errors": {
+          "INVALID_LAG": "The lag/lead must be a whole number of minutes.",
+          "DUPLICATE_DEPENDENCY": "This dependency already exists between these two tasks with this link type.",
+          "SCHEDULE_CYCLE": "This change would create a dependency cycle — update refused.",
+          "FORBIDDEN": "You don't have permission to edit this dependency.",
+          "NOT_FOUND": "This dependency could not be found.",
+          "GENERIC": "Could not update the dependency."
+        },
+        "announceUpdated": "Dependency updated: {{predecessor}} → {{successor}} ({{type}})."
+      },
+      "delete": {
+        "button": "Delete",
+        "confirmPrompt": "Confirm deletion?",
+        "confirmButton": "Yes, delete",
+        "cancelButton": "Cancel",
+        "errors": {
+          "FORBIDDEN": "You don't have permission to delete this dependency.",
+          "NOT_FOUND": "This dependency could not be found.",
+          "GENERIC": "Could not delete the dependency."
+        },
+        "announceDeleted": "Dependency deleted: {{predecessor}} → {{successor}}."
+      }
+    }
   }
 }
