@@ -1,0 +1,98 @@
+<div class="rm-share">
+  <h2 class="rm-share__title">{{ 'roadmap.share.title' | transloco }}</h2>
+
+  <form class="rm-share__form" (submit)="$event.preventDefault(); submitCreate()">
+    <label for="rm-share-expires-at">{{ 'roadmap.share.create.expiresAtLabel' | transloco }}</label>
+    <input
+      id="rm-share-expires-at"
+      type="datetime-local"
+      [value]="expiresAtInput()"
+      (input)="onExpiresAtInput($event)"
+      [attr.aria-invalid]="createErrorKey() ? true : null"
+      [attr.aria-describedby]="createErrorKey() ? 'rm-share-create-error' : null"
+    />
+    <button type="submit" [disabled]="creating()">{{ 'roadmap.share.create.submit' | transloco }}</button>
+    @if (createErrorKey()) {
+      <p id="rm-share-create-error" class="rm-share__error" role="alert">{{ createErrorKey()! | transloco }}</p>
+    }
+  </form>
+
+  @if (justCreated(); as created) {
+    <div class="rm-share__reveal" role="alert">
+      <h3>{{ 'roadmap.share.tokenReveal.title' | transloco }}</h3>
+      <p>{{ 'roadmap.share.tokenReveal.warning' | transloco }}</p>
+      <code class="rm-share__reveal-url">{{ shareUrl(created.token) }}</code>
+      <button type="button" (click)="copyShareUrl(created.token)">
+        {{ 'roadmap.share.tokenReveal.copyButton' | transloco }}
+      </button>
+      @if (copyStatus() === 'copied') {
+        <span role="status">{{ 'roadmap.share.tokenReveal.copied' | transloco }}</span>
+      }
+      @if (copyStatus() === 'error') {
+        <span role="alert">{{ 'roadmap.share.tokenReveal.copyError' | transloco }}</span>
+      }
+      <button type="button" (click)="dismissJustCreated()">
+        {{ 'roadmap.share.tokenReveal.dismiss' | transloco }}
+      </button>
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="rm-share__status" role="status">{{ 'roadmap.share.list.loading' | transloco }}</p>
+  } @else if (loadErrorKey()) {
+    <div class="rm-share__status rm-share__status--error" role="alert">
+      <p>{{ loadErrorKey()! | transloco }}</p>
+      <button type="button" (click)="retryLoad()">{{ 'roadmap.share.list.retry' | transloco }}</button>
+    </div>
+  } @else if (links().length === 0) {
+    <p class="rm-share__empty">{{ 'roadmap.share.list.empty' | transloco }}</p>
+  } @else {
+    <table class="rm-share__table">
+      <thead>
+        <tr>
+          <th scope="col">{{ 'roadmap.share.list.columns.createdAt' | transloco }}</th>
+          <th scope="col">{{ 'roadmap.share.list.columns.expiresAt' | transloco }}</th>
+          <th scope="col">{{ 'roadmap.share.list.columns.status' | transloco }}</th>
+          <th scope="col">{{ 'roadmap.share.list.columns.actions' | transloco }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (link of links(); track link.id) {
+          <tr>
+            <td>{{ link.createdAt }}</td>
+            <td>{{ link.expiresAt ?? ('roadmap.share.list.noExpiry' | transloco) }}</td>
+            <td>
+              @if (link.active) {
+                {{ 'roadmap.share.list.status.active' | transloco }}
+              } @else if (link.revokedAt) {
+                {{ 'roadmap.share.list.status.revoked' | transloco }}
+              } @else {
+                {{ 'roadmap.share.list.status.expired' | transloco }}
+              }
+            </td>
+            <td>
+              @if (link.active) {
+                @if (confirmingRevokeId() === link.id) {
+                  <span>{{ 'roadmap.share.revoke.confirmPrompt' | transloco }}</span>
+                  <button type="button" (click)="confirmRevoke(link.id)">
+                    {{ 'roadmap.share.revoke.confirmButton' | transloco }}
+                  </button>
+                  <button type="button" (click)="cancelRevoke()">
+                    {{ 'roadmap.share.revoke.cancelButton' | transloco }}
+                  </button>
+                } @else {
+                  <button type="button" (click)="requestRevoke(link.id)">
+                    {{ 'roadmap.share.revoke.button' | transloco }}
+                  </button>
+                }
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (revokeErrorKey()) {
+      <p class="rm-share__error" role="alert">{{ revokeErrorKey()! | transloco }}</p>
+    }
+  }
+</div>
