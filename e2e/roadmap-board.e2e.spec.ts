@@ -173,10 +173,14 @@ test.describe('Échelle de temps floue (US22.3.2)', () => {
     // AC — default grain is Trimestre (QUARTER), matching US22.3.1's fixed axis.
     await expect(scaleSelect).toHaveValue('QUARTER');
 
-    // A11y AC — keyboard-operable: Tab to the selector, then change its value with the keyboard.
-    await page.keyboard.press('Tab');
+    // A11y AC — keyboard-operable: focus the selector directly (two other forms precede it in
+    // tab order, so a single blind `Tab` from page load isn't a reliable way to reach it — see
+    // `RoadmapBoardComponent`'s template), then drive it with real keyboard input. A native
+    // `<select>` moves to the adjacent option on ArrowUp/ArrowDown without opening a popup —
+    // `MONTH` is the option just before the default `QUARTER`.
+    await scaleSelect.focus();
     await expect(scaleSelect).toBeFocused();
-    await scaleSelect.selectOption('MONTH');
+    await page.keyboard.press('ArrowUp');
     await expect(scaleSelect).toHaveValue('MONTH');
 
     // AC — bars re-align on the new grain's period boundaries; the initiative's own stored
@@ -185,14 +189,16 @@ test.describe('Échelle de temps floue (US22.3.2)', () => {
     await expect(bar).toBeVisible();
     expect(updatePlacementCalls).toBe(0);
 
-    await scaleSelect.selectOption('SEMESTER');
+    // ArrowDown twice: MONTH -> QUARTER -> SEMESTER.
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
     await expect(scaleSelect).toHaveValue('SEMESTER');
     await expect(bar).toBeVisible();
     expect(updatePlacementCalls).toBe(0);
 
     // Error AC — switching back to the original grain never lost/truncated the stored period:
     // no error surfaced, initiative still rendered.
-    await scaleSelect.selectOption('QUARTER');
+    await page.keyboard.press('ArrowUp');
     await expect(scaleSelect).toHaveValue('QUARTER');
     await expect(bar).toBeVisible();
     await expect(page.getByRole('alert')).toHaveCount(0);
