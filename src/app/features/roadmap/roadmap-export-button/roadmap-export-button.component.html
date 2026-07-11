@@ -1,0 +1,14 @@
+<div class="rm-export">
+  <button type="button" (click)="exportPng()" [disabled]="!target() || exporting()">
+    {{ 'roadmap.export.pngButton' | transloco }}
+  </button>
+  <button type="button" (click)="exportPdf()" [disabled]="!target() || exporting()">
+    {{ 'roadmap.export.pdfButton' | transloco }}
+  </button>
+  @if (exporting()) {
+    <span class="rm-export__status" role="status">{{ 'roadmap.export.exporting' | transloco }}</span>
+  }
+  @if (errorKey()) {
+    <p class="rm-export__error" role="alert">{{ errorKey()! | transloco }}</p>
+  }
+</div>
