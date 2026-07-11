@@ -44,11 +44,18 @@ Volontairement **exclus** pour l'instant (raison) :
 - `Docker preview image (PR)` — pousse vers GHCR ; fonctionnel dès aujourd'hui via
   `GITHUB_TOKEN`, mais délibérément laissé hors du gate initial le temps d'observer le premier
   run (création du package).
-- `E2E - Playwright` — pas encore présent dans ce squelette bootstrap-only : le job E2E de
-  pivot-ui teste le shell + OIDC + navigation réels, qui n'existent pas encore ici (aucune
-  feature de code n'a été développée, cf. périmètre de ce bootstrap). À revisiter dès la
-  première vraie US de ce repo.
 - `Lighthouse — Accessibilité` — voir §4 (dépendance non triviale).
+
+**Mise à jour US22.3.1 (roadmap rapide)** — `E2E - Playwright` tourne déjà (déclencheurs
+`push`/`pull_request` inconditionnels sur `.github/workflows/e2e.yml`, jamais retiré du
+workflow lui-même) : la ligne ci-dessus l'excluant de la liste requise a été retirée car ce
+squelette n'est plus "bootstrap-only" — `e2e/roadmap-board.e2e.spec.ts` exerce une vraie feature
+(création de lane/initiative, déplacement clavier, cas d'erreur 403) contre le build Angular
+statique, stubbée réseau via `page.route` (même mitigation que `pivot-agilite-ui/e2e.yml`, pas de
+`pivot-pilotage-core` réel démarré ici — aucune image GHCR publiée pour ce backend à ce jour).
+**Reste à faire (hors scope de cette US, action admin distincte)** : ajouter `E2E - Playwright`
+à la liste des status checks requis via `gh api .../branches/main/protection` — non fait ici
+volontairement, cette PR ne modifie pas la configuration de branch protection.
 
 ## 4. GAP CONNU — Lighthouse et pages authentifiées
 
