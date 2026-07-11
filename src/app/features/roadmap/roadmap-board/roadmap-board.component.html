@@ -1,0 +1,97 @@
+@if (loading()) {
+  <p class="rm-board__status" role="status">{{ 'roadmap.board.loading' | transloco }}</p>
+} @else if (loadErrorKey()) {
+  <div class="rm-board__status rm-board__status--error" role="alert">
+    <p>{{ loadErrorKey()! | transloco }}</p>
+    <button type="button" (click)="retryLoad()">{{ 'roadmap.board.retry' | transloco }}</button>
+  </div>
+} @else {
+  <div class="rm-board">
+    <h1 class="rm-board__title">{{ 'roadmap.board.title' | transloco }}</h1>
+
+    <form class="rm-board__form" (submit)="$event.preventDefault(); submitCreateLane()">
+      <label for="rm-new-lane-name">{{ 'roadmap.board.createLane.nameLabel' | transloco }}</label>
+      <input
+        id="rm-new-lane-name"
+        type="text"
+        [value]="newLaneName()"
+        (input)="onLaneNameInput($event)"
+        [attr.aria-invalid]="createLaneErrorKey() ? true : null"
+        [attr.aria-describedby]="createLaneErrorKey() ? 'rm-new-lane-error' : null"
+      />
+      <button type="submit" [disabled]="creatingLane()">
+        {{ 'roadmap.board.createLane.submit' | transloco }}
+      </button>
+      @if (createLaneErrorKey()) {
+        <p id="rm-new-lane-error" class="rm-board__error" role="alert">
+          {{ createLaneErrorKey()! | transloco }}
+        </p>
+      }
+    </form>
+
+    <form class="rm-board__form" (submit)="$event.preventDefault(); submitCreateInitiative()">
+      <label for="rm-new-initiative-name">{{ 'roadmap.board.createInitiative.nameLabel' | transloco }}</label>
+      <input
+        id="rm-new-initiative-name"
+        type="text"
+        [value]="newInitiativeName()"
+        (input)="onInitiativeNameInput($event)"
+        [attr.aria-invalid]="createInitiativeErrorKey() ? true : null"
+        [attr.aria-describedby]="createInitiativeErrorKey() ? 'rm-new-initiative-error' : null"
+      />
+      <label for="rm-new-initiative-lane">{{ 'roadmap.board.createInitiative.laneLabel' | transloco }}</label>
+      <select id="rm-new-initiative-lane" (change)="onInitiativeLaneChange($event)">
+        <option value="">{{ 'roadmap.board.createInitiative.lanePlaceholder' | transloco }}</option>
+        @for (lane of lanes(); track lane.id) {
+          <option [value]="lane.id">{{ lane.name }}</option>
+        }
+      </select>
+      <button type="submit" [disabled]="creatingInitiative()">
+        {{ 'roadmap.board.createInitiative.submit' | transloco }}
+      </button>
+      @if (createInitiativeErrorKey()) {
+        <p id="rm-new-initiative-error" class="rm-board__error" role="alert">
+          {{ createInitiativeErrorKey()! | transloco }}
+        </p>
+      }
+    </form>
+
+    @if (lanes().length === 0) {
+      <p class="rm-board__empty">{{ 'roadmap.board.noLanes' | transloco }}</p>
+    } @else {
+      <div class="rm-board__timeline">
+        <div class="rm-board__quarters" [style.margin-left.px]="laneLabelWidthPx">
+          @for (quarter of quarters; track quarter.index) {
+            <div class="rm-board__quarter-cell" [style.width.px]="quarterWidthPx">{{ quarter.label }}</div>
+          }
+        </div>
+
+        <div class="rm-board__lanes">
+          @for (lane of lanes(); track lane.id) {
+            <div class="rm-lane">
+              <div class="rm-lane__label" [style.width.px]="laneLabelWidthPx">{{ lane.name }}</div>
+              <div class="rm-lane__track" [style.width.px]="axisWidthPx"></div>
+            </div>
+          }
+        </div>
+
+        <div class="rm-board__bars" [style.left.px]="laneLabelWidthPx">
+          @for (initiative of initiatives(); track initiative.id) {
+            <app-initiative-bar
+              [initiative]="initiative"
+              [quarters]="quarters"
+              [laneIds]="laneIds()"
+              (placementChange)="onPlacementChange(initiative, $event)"
+            />
+          }
+        </div>
+      </div>
+    }
+
+    @if (placementErrorKey()) {
+      <p class="rm-board__error" role="alert">{{ placementErrorKey()! | transloco }}</p>
+    }
+
+    <p class="rm-sr-only" aria-live="polite">{{ announcement() }}</p>
+  </div>
+}

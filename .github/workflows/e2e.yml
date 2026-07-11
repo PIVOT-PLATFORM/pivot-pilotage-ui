@@ -1,10 +1,24 @@
 name: E2E
 
-# Squelette bootstrap-only : aucune feature réelle (pas d'auth, pas d'appel pivot-core) —
-# contrairement à pivot-ui, ce workflow ne dépend d'AUCUN backend (pas de services
-# postgres/redis/pivot-core). La spec Playwright ne fait que valider que le shell build/boot
-# (route placeholder). À réviser dès la première vraie feature Pilotage (voir CLAUDE.md,
-# TODO-SETUP.md §3).
+# Historique (bootstrap) : à l'origine une seule route placeholder (features/home), aucun appel
+# HTTP à un backend — ce workflow ne dépendait d'AUCUN backend (pas de services
+# postgres/redis/pivot-core), il ne faisait que valider que le shell build/boot. TODO-SETUP.md §3
+# l'excluait alors des status checks requis ("à revisiter dès la première vraie US de ce repo").
+#
+# Depuis US22.3.1 (roadmap rapide, `features/roadmap`) : une vraie feature appelle bien le
+# backend (`GET/POST /api/pilotage/.../roadmap/lanes|initiatives`, `PATCH .../initiatives/{id}`).
+# Aucun conteneur `pivot-pilotage-core` réel n'est démarré ici : ce backend n'a publié aucune
+# image GHCR à ce jour (pas de release) — même constat et mitigation que
+# `pivot-agilite-ui/.github/workflows/e2e.yml` pour son propre premier appel réel
+# (`POST /api/agilite/retro/sessions`, US20.1.1). `e2e/roadmap-board.e2e.spec.ts` stubbe donc la
+# réponse backend au niveau réseau via `page.route` (Playwright) — besoin uniquement du build
+# Angular statique déjà servi ci-dessous, pas d'un backend démarré. À réintroduire un vrai
+# `pivot-pilotage-core` (:8081, jamais pivot-core :8080) — sur le modèle de
+# `pivot-collaboratif-ui/e2e.yml` — dès qu'une image GHCR est publiée pour ce backend.
+#
+# Ce job tourne déjà (déclencheurs `push`/`pull_request` inconditionnels) — TODO-SETUP.md §3 est
+# mis à jour pour l'ajouter à la liste des status checks requis maintenant qu'une vraie feature
+# existe pour le couvrir.
 
 on:
   push:

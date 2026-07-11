@@ -1,0 +1,57 @@
+{
+  "roadmap": {
+    "board": {
+      "title": "Roadmap rapide",
+      "loading": "Chargement de la roadmap…",
+      "retry": "Réessayer",
+      "noLanes": "Aucune lane pour l'instant — créez-en une pour commencer à poser des initiatives.",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de charger la roadmap."
+        }
+      },
+      "createLane": {
+        "nameLabel": "Nom de la lane (thème, équipe, objectif…)",
+        "submit": "Créer la lane",
+        "errors": {
+          "NAME_REQUIRED": "Le nom de la lane est requis.",
+          "INVALID_NAME": "Le nom de la lane est invalide.",
+          "LANE_DUPLICATE": "Une lane porte déjà ce nom sur ce projet.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour créer une lane sur ce projet.",
+          "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de créer la lane."
+        }
+      },
+      "createInitiative": {
+        "nameLabel": "Nom de l'initiative",
+        "laneLabel": "Lane",
+        "lanePlaceholder": "Choisir une lane…",
+        "submit": "Créer l'initiative",
+        "errors": {
+          "NAME_REQUIRED": "Le nom de l'initiative est requis.",
+          "LANE_REQUIRED": "Une lane est requise pour créer une initiative.",
+          "LANE_NOT_FOUND": "Cette lane n'existe pas ou n'appartient pas à ce projet.",
+          "INVALID_PERIOD": "La période indiquée est invalide.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour créer une initiative sur ce projet.",
+          "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de créer l'initiative."
+        }
+      },
+      "placement": {
+        "errors": {
+          "LANE_NOT_FOUND": "Cette lane n'existe pas ou n'appartient pas à ce projet.",
+          "INVALID_PERIOD": "La période indiquée est invalide.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour déplacer cette initiative.",
+          "NOT_FOUND": "Ce projet ou cette initiative est introuvable.",
+          "GENERIC": "Impossible de mettre à jour l'initiative."
+        }
+      },
+      "bar": {
+        "ariaLabel": "Initiative {{name}}, {{period}}. Flèches pour déplacer, Maj + flèches pour redimensionner, haut/bas pour changer de lane.",
+        "announceMoved": "{{name}} déplacée : {{start}} → {{end}}.",
+        "announceReverted": "{{name}} : déplacement annulé, une erreur est survenue."
+      }
+    }
+  }
+}

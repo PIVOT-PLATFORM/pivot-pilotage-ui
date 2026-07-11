@@ -1,0 +1,28 @@
+<div
+  class="rm-bar"
+  [class.rm-bar--dragging]="dragging()"
+  [style.left.px]="leftPx()"
+  [style.width.px]="widthPx()"
+  [style.top.px]="topPx()"
+  tabindex="0"
+  role="button"
+  [attr.aria-label]="'roadmap.board.bar.ariaLabel' | transloco: { name: initiative().name, period: periodLabel() }"
+  (pointerdown)="onBarPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp($event)"
+  (pointercancel)="onPointerCancel($event)"
+  (lostpointercapture)="onPointerCancel($event)"
+  (keydown)="onKeyDown($event)"
+>
+  <span
+    class="rm-bar__handle rm-bar__handle--start"
+    aria-hidden="true"
+    (pointerdown)="onStartHandlePointerDown($event)"
+  ></span>
+  <span class="rm-bar__label">{{ initiative().name }}</span>
+  <span
+    class="rm-bar__handle rm-bar__handle--end"
+    aria-hidden="true"
+    (pointerdown)="onEndHandlePointerDown($event)"
+  ></span>
+</div>
