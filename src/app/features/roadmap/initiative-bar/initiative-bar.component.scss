@@ -1,0 +1,55 @@
+.rm-bar {
+  position: absolute;
+  box-sizing: border-box;
+  height: 40px;
+  margin-top: 12px; // vertical centering within the 64px lane row (LANE_HEIGHT_PX)
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  // Contraste texte blanc / fond #0b5cab vérifié WCAG 2.1 AA (~6.7:1, >= 4.5:1 requis).
+  background: #0b5cab;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: grab;
+  touch-action: none;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+
+  &--dragging {
+    cursor: grabbing;
+    opacity: 0.85;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 35%);
+  }
+}
+
+.rm-bar__label {
+  flex: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.rm-bar__handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: ew-resize;
+
+  &--start {
+    left: 0;
+  }
+
+  &--end {
+    right: 0;
+  }
+}
+
+.rm-bar:focus-visible {
+  outline: 3px solid #202124;
+  outline-offset: 2px;
+}
