@@ -1,0 +1,39 @@
+<div class="cal-eff">
+  <h2 class="cal-eff__title">{{ 'calendar.effective.title' | transloco }}</h2>
+
+  @if (loading()) {
+    <p class="cal-eff__status" role="status">{{ 'calendar.effective.loading' | transloco }}</p>
+  } @else if (loadErrorKey()) {
+    <div class="cal-eff__status cal-eff__status--error" role="alert">
+      <p>{{ loadErrorKey()! | transloco }}</p>
+      <button type="button" (click)="retryLoad()">{{ 'calendar.effective.retry' | transloco }}</button>
+    </div>
+  } @else if (result(); as effective) {
+    <p class="cal-eff__resolved-from">
+      {{ 'calendar.effective.resolvedFromLabel' | transloco }}
+      <strong>{{ 'calendar.scopes.' + effective.resolvedFrom | transloco }}</strong>
+    </p>
+
+    <dl class="cal-eff__details">
+      <dt>{{ 'calendar.effective.nameLabel' | transloco }}</dt>
+      <dd>{{ effective.calendar.name }}</dd>
+
+      <dt>{{ 'calendar.effective.scopeLabel' | transloco }}</dt>
+      <dd>{{ 'calendar.scopes.' + effective.calendar.scope | transloco }}</dd>
+
+      <dt>{{ 'calendar.manager.workingDaysLabel' | transloco }}</dt>
+      <dd>
+        @for (day of effective.calendar.workingDays; track day) {
+          <span class="cal-eff__day-chip">{{ dayLabelKey(day) | transloco }}</span>
+        }
+      </dd>
+
+      <dt>{{ 'calendar.manager.rangesLabel' | transloco }}</dt>
+      <dd>
+        @for (range of effective.calendar.ranges; track $index) {
+          <span class="cal-eff__range-chip">{{ formatHour(range.startHour) }}–{{ formatHour(range.endHour) }}</span>
+        }
+      </dd>
+    </dl>
+  }
+</div>

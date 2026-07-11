@@ -281,5 +281,162 @@
         "announceDeleted": "Dependency deleted: {{predecessor}} → {{successor}}."
       }
     }
+  },
+  "calendar": {
+    "scopes": {
+      "PROJECT": "Project",
+      "TASK": "Task",
+      "RESOURCE": "Resource"
+    },
+    "days": {
+      "MON": "Monday",
+      "TUE": "Tuesday",
+      "WED": "Wednesday",
+      "THU": "Thursday",
+      "FRI": "Friday",
+      "SAT": "Saturday",
+      "SUN": "Sunday"
+    },
+    "manager": {
+      "title": "Working-time calendars",
+      "workingDaysLabel": "Working days",
+      "rangesLabel": "Working hours",
+      "range": {
+        "startLabel": "Start hour",
+        "endLabel": "End hour",
+        "add": "Add a range",
+        "remove": "Remove"
+      },
+      "create": {
+        "heading": "Create a calendar",
+        "scopeLabel": "Scope",
+        "projectIdLabel": "Project id (optional — leave empty for a reusable calendar)",
+        "nameLabel": "Name",
+        "submit": "Create calendar",
+        "errors": {
+          "NAME_REQUIRED": "The calendar name is required.",
+          "WORKING_DAYS_REQUIRED": "At least one working day is required.",
+          "INVALID_RANGE": "Each working-hour range must end strictly after it starts.",
+          "INVALID_PROJECT_ID": "The project id must be a number.",
+          "FORBIDDEN": "You don't have permission to create a calendar (project administration role required).",
+          "NOT_FOUND": "The supplied project could not be found, or you don't have access to it.",
+          "GENERIC": "Could not create the calendar."
+        }
+      },
+      "list": {
+        "loading": "Loading the calendars…",
+        "retry": "Retry",
+        "empty": "No calendars yet — create one to start defining working days.",
+        "columns": {
+          "name": "Name",
+          "scope": "Scope",
+          "workingDays": "Working days",
+          "ranges": "Working hours",
+          "actions": "Actions"
+        },
+        "actions": {
+          "edit": "Edit",
+          "exceptions": "Exceptions"
+        }
+      },
+      "load": {
+        "errors": {
+          "NOT_FOUND": "This tenant/team could not be found, or you don't have access to it.",
+          "GENERIC": "Could not load the calendars."
+        }
+      },
+      "edit": {
+        "nameLabel": "Name",
+        "submit": "Save",
+        "cancel": "Cancel",
+        "errors": {
+          "NAME_REQUIRED": "The calendar name is required.",
+          "WORKING_DAYS_REQUIRED": "At least one working day is required.",
+          "INVALID_RANGE": "Each working-hour range must end strictly after it starts.",
+          "FORBIDDEN": "You don't have permission to edit this calendar (project administration role required).",
+          "NOT_FOUND": "This calendar could not be found.",
+          "GENERIC": "Could not update the calendar."
+        }
+      },
+      "delete": {
+        "button": "Delete",
+        "confirmPrompt": "Confirm deletion?",
+        "confirmButton": "Yes, delete",
+        "cancelButton": "Cancel",
+        "errors": {
+          "FORBIDDEN": "You don't have permission to delete this calendar (project administration role required).",
+          "NOT_FOUND": "This calendar could not be found.",
+          "GENERIC": "Could not delete the calendar."
+        }
+      }
+    },
+    "exceptions": {
+      "title": "Exceptions (public holidays, closures, exceptionally-worked days)",
+      "add": {
+        "startDateLabel": "Start date",
+        "endDateLabel": "End date",
+        "typeLabel": "Type",
+        "type": {
+          "off": "Day off (public holiday, closure)",
+          "working": "Exceptionally worked"
+        },
+        "rangesLabel": "Specific working hours (optional — leave empty to use the calendar's default hours)",
+        "addRange": "Add a range",
+        "submit": "Add exception",
+        "errors": {
+          "DATES_REQUIRED": "Both a start and an end date are required.",
+          "END_BEFORE_START": "The end date cannot be before the start date.",
+          "INVALID_RANGE": "Each working-hour range must end strictly after it starts.",
+          "FORBIDDEN": "You don't have permission to add an exception (project administration role required).",
+          "NOT_FOUND": "This calendar could not be found.",
+          "GENERIC": "Could not add the exception."
+        }
+      },
+      "list": {
+        "loading": "Loading the exceptions…",
+        "retry": "Retry",
+        "empty": "No exceptions yet for this calendar.",
+        "columns": {
+          "date": "Date",
+          "type": "Type",
+          "ranges": "Hours",
+          "actions": "Actions"
+        },
+        "type": {
+          "off": "Day off",
+          "working": "Exceptionally worked"
+        }
+      },
+      "load": {
+        "errors": {
+          "FORBIDDEN": "You don't have permission to view this calendar's exceptions.",
+          "NOT_FOUND": "This calendar could not be found.",
+          "GENERIC": "Could not load the exceptions."
+        }
+      },
+      "remove": {
+        "button": "Remove",
+        "confirmPrompt": "Confirm removal?",
+        "confirmButton": "Yes, remove",
+        "cancelButton": "Cancel",
+        "errors": {
+          "FORBIDDEN": "You don't have permission to remove this exception (project administration role required).",
+          "NOT_FOUND": "This exception could not be found.",
+          "GENERIC": "Could not remove the exception."
+        }
+      }
+    },
+    "effective": {
+      "title": "Effective calendar",
+      "loading": "Resolving the effective calendar…",
+      "retry": "Retry",
+      "resolvedFromLabel": "Resolved from:",
+      "nameLabel": "Name",
+      "scopeLabel": "Scope",
+      "errors": {
+        "NOT_FOUND": "This task could not be found, or no calendar resolves for it.",
+        "GENERIC": "Could not resolve the effective calendar."
+      }
+    }
   }
 }

@@ -36,6 +36,12 @@ import { Routes } from '@angular/router';
  * parallèle séparément suivi (`feat/us22-4-1abc-wbs-tree-ui`) — cette route ne dépend pas de sa
  * propre route à terme, les deux convergeront probablement sous un même parent `.../gantt` une
  * fois les deux livrées.
+ *
+ * `tenants/:tenantId/teams/:teamId/calendars` et
+ * `.../projects/:projectId/tasks/:taskId/effective-calendar` — US22.4.5 (calendriers ouvrés &
+ * exceptions, F22.4 "Gantt détaillé"). Chemins identiques aux segments d'URL exposés par
+ * `pivot-pilotage-core`'s `CalendarController` (même gap-era `tenantId`/`teamId` en path — voir
+ * `CalendarTeamRef`/`CalendarTaskRef` TSDoc), même posture que la roadmap ci-dessus.
  */
 export const routes: Routes = [
   {
@@ -59,6 +65,18 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/gantt/dependency-manager/dependency-manager.component').then(
         (m) => m.DependencyManagerComponent,
+      ),
+  },
+  {
+    path: 'tenants/:tenantId/teams/:teamId/calendars',
+    loadComponent: () =>
+      import('./features/calendar/calendar-manager/calendar-manager.component').then((m) => m.CalendarManagerComponent),
+  },
+  {
+    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/tasks/:taskId/effective-calendar',
+    loadComponent: () =>
+      import('./features/calendar/effective-calendar-view/effective-calendar-view.component').then(
+        (m) => m.EffectiveCalendarViewComponent,
       ),
   },
 ];
