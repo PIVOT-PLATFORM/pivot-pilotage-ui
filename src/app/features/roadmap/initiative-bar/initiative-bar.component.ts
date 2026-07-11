@@ -124,6 +124,14 @@ export class InitiativeBarComponent {
   }
 
   private beginDrag(mode: DragMode, event: PointerEvent): void {
+    if (this.dragMode !== null) {
+      // A gesture is already in progress (e.g. a second finger/pointer on touch, since
+      // `touch-action: none` deliberately allows touch dragging) — never hijack it: the first
+      // pointer's `setPointerCapture` stays valid and its `pointermove`/`pointerup` keep working
+      // normally, this second, extra pointerdown is simply ignored.
+      return;
+    }
+
     this.dragMode = mode;
     this.dragPointerId = event.pointerId;
     this.dragOriginClientX = event.clientX;
@@ -175,6 +183,11 @@ export class InitiativeBarComponent {
     this.commitDrag();
   }
 
+  /**
+   * Shared abort path for both `pointercancel` (OS/browser-initiated gesture interrupt) and
+   * `lostpointercapture` (capture force-released outside a normal `pointerup`, e.g. a platform
+   * focus-loss case) — either way, never commit a gesture that didn't end in a proper drop.
+   */
   protected onPointerCancel(event: PointerEvent): void {
     if (this.dragMode === null || event.pointerId !== this.dragPointerId) {
       return;

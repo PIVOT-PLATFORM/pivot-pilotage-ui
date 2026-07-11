@@ -146,6 +146,33 @@ describe('InitiativeBarComponent', () => {
 
       expect(barEl.style.left).toBe('0px');
     });
+
+    it('never hijacks an in-progress gesture from a second, concurrent pointerdown (e.g. a second touch)', () => {
+      const { barEl, emitted } = create();
+
+      barEl.dispatchEvent(pointerEvt('pointerdown', { pointerId: 1, clientX: 0, clientY: 0 }));
+      // A second pointer (e.g. a second finger) tries to start its own gesture — ignored, the
+      // first pointer keeps driving the only active drag.
+      barEl.dispatchEvent(pointerEvt('pointerdown', { pointerId: 2, clientX: 50, clientY: 50 }));
+      barEl.dispatchEvent(pointerEvt('pointermove', { pointerId: 1, clientX: QUARTER_WIDTH_PX * 2, clientY: 0 }));
+      barEl.dispatchEvent(pointerEvt('pointerup', { pointerId: 1, clientX: QUARTER_WIDTH_PX * 2, clientY: 0 }));
+
+      expect(emitted).toHaveLength(1);
+      expect(emitted[0]).toEqual({ laneId: 10, fuzzyPeriodStart: '2026-07-01', fuzzyPeriodEnd: '2026-09-30' });
+    });
+
+    it('aborts without emitting on lostpointercapture, same as pointercancel', () => {
+      const { fixture, barEl, emitted } = create();
+
+      barEl.dispatchEvent(pointerEvt('pointerdown', { pointerId: 1, clientX: 0, clientY: 0 }));
+      barEl.dispatchEvent(pointerEvt('pointermove', { pointerId: 1, clientX: QUARTER_WIDTH_PX * 3, clientY: 0 }));
+      barEl.dispatchEvent(pointerEvt('lostpointercapture', { pointerId: 1, clientX: QUARTER_WIDTH_PX * 3, clientY: 0 }));
+      fixture.detectChanges();
+
+      expect(barEl.classList.contains('rm-bar--dragging')).toBe(false);
+      expect(barEl.style.left).toBe('0px');
+      expect(emitted).toHaveLength(0);
+    });
   });
 
   describe('mouse drag — resize', () => {
