@@ -59,10 +59,19 @@
     @if (lanes().length === 0) {
       <p class="rm-board__empty">{{ 'roadmap.board.noLanes' | transloco }}</p>
     } @else {
+      <div class="rm-board__scale">
+        <label for="rm-time-scale">{{ 'roadmap.board.timeScale.label' | transloco }}</label>
+        <select id="rm-time-scale" [value]="timeScale()" (change)="onTimeScaleChange($event)">
+          <option value="MONTH">{{ 'roadmap.board.timeScale.options.MONTH' | transloco }}</option>
+          <option value="QUARTER">{{ 'roadmap.board.timeScale.options.QUARTER' | transloco }}</option>
+          <option value="SEMESTER">{{ 'roadmap.board.timeScale.options.SEMESTER' | transloco }}</option>
+        </select>
+      </div>
+
       <div class="rm-board__timeline">
-        <div class="rm-board__quarters" [style.margin-left.px]="laneLabelWidthPx">
-          @for (quarter of quarters; track quarter.index) {
-            <div class="rm-board__quarter-cell" [style.width.px]="quarterWidthPx">{{ quarter.label }}</div>
+        <div class="rm-board__periods" [style.margin-left.px]="laneLabelWidthPx">
+          @for (period of periods(); track period.index) {
+            <div class="rm-board__period-cell" [style.width.px]="periodWidthPx()">{{ period.label }}</div>
           }
         </div>
 
@@ -70,7 +79,11 @@
           @for (lane of lanes(); track lane.id) {
             <div class="rm-lane">
               <div class="rm-lane__label" [style.width.px]="laneLabelWidthPx">{{ lane.name }}</div>
-              <div class="rm-lane__track" [style.width.px]="axisWidthPx"></div>
+              <div
+                class="rm-lane__track"
+                [style.width.px]="axisWidthPx()"
+                [style.background-size]="periodWidthPx() + 'px 100%'"
+              ></div>
             </div>
           }
         </div>
@@ -79,7 +92,8 @@
           @for (initiative of initiatives(); track initiative.id) {
             <app-initiative-bar
               [initiative]="initiative"
-              [quarters]="quarters"
+              [periods]="periods()"
+              [periodWidthPx]="periodWidthPx()"
               [laneIds]="laneIds()"
               (placementChange)="onPlacementChange(initiative, $event)"
             />

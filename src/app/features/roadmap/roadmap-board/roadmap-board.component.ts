@@ -21,13 +21,23 @@ import {
   RoadmapProjectRef,
 } from '../data-access/roadmap.models';
 import { InitiativeBarComponent } from '../initiative-bar/initiative-bar.component';
-import { QUARTER_WIDTH_PX, QuarterCell, buildQuarterAxis } from '../roadmap-timeline';
+import { RoadmapTimeScaleService } from '../roadmap-time-scale.service';
+import { PERIOD_WIDTH_PX, PeriodCell, RoadmapTimeScale, buildTimeAxis } from '../roadmap-timeline';
 
 /**
  * Roadmap-rapide board (US22.3.1 — "Créer une roadmap rapide"): create lanes (flat groupings —
  * theme/team/objective), pose initiatives on them without requiring dates or child tasks (AC1),
  * and move/resize those initiatives with the mouse or the keyboard to set their approximate
  * period (AC2 + A11y AC).
+ *
+ * **Time scale (US22.3.2 — "Échelle de temps floue").** The axis rendered above the lanes can be
+ * sliced at three grains — month/quarter/semester (see `RoadmapTimeScale`) — picked via the
+ * `<select>` bound to {@link timeScale}. This is a **display-only projection**: switching the
+ * grain only rebuilds which `PeriodCell`s the same, untouched `initiatives()` are positioned
+ * against (`roadmap-timeline.ts`'s `buildTimeAxis`/`periodIndexForDate`) — it never reads or
+ * writes `fuzzyPeriodStart`/`fuzzyPeriodEnd`, so it can never lose or truncate an initiative's
+ * stored period (Error AC), and it never calls `RoadmapApiService` (Security AC: a pure view
+ * setting, local to this browser/user — see `RoadmapTimeScaleService`, which also persists it).
  *
  * Owns the canonical `lanes`/`initiatives` lists and every `RoadmapApiService` call — child
  * `InitiativeBarComponent`s are purely presentational/interactive, they only emit a resolved
@@ -67,10 +77,18 @@ export class RoadmapBoardComponent implements OnInit {
   private readonly roadmapApi = inject(RoadmapApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly transloco = inject(TranslocoService);
+  private readonly timeScaleService = inject(RoadmapTimeScaleService);
 
-  protected readonly quarterWidthPx = QUARTER_WIDTH_PX;
-  protected readonly quarters: readonly QuarterCell[] = buildQuarterAxis(new Date());
-  protected readonly axisWidthPx = this.quarters.length * QUARTER_WIDTH_PX;
+  private readonly projectRef: RoadmapProjectRef = this.readProjectRef();
+
+  /** Anchor date for the time axis, captured once — see `buildTimeAxis`'s `anchor` param. Fixed for the component's lifetime so cycling through scales never drifts the axis's "today" reference. */
+  private readonly axisAnchor = new Date();
+
+  /** Currently selected axis grain (US22.3.2) — initialised from, and persisted to, `RoadmapTimeScaleService`. */
+  protected readonly timeScale = signal<RoadmapTimeScale>(this.timeScaleService.read(this.projectRef));
+  protected readonly periods = computed<readonly PeriodCell[]>(() => buildTimeAxis(this.axisAnchor, this.timeScale()));
+  protected readonly periodWidthPx = computed(() => PERIOD_WIDTH_PX[this.timeScale()]);
+  protected readonly axisWidthPx = computed(() => this.periods().length * this.periodWidthPx());
   /** Fixed width of the lane-label column — the bars overlay starts right after it. */
   protected readonly laneLabelWidthPx = 180;
 
@@ -101,8 +119,6 @@ export class RoadmapBoardComponent implements OnInit {
    */
   private readonly pendingPlacementTokens = new Map<number, symbol>();
 
-  private readonly projectRef: RoadmapProjectRef = this.readProjectRef();
-
   private readProjectRef(): RoadmapProjectRef {
     const params = this.route.snapshot.paramMap;
     return {
@@ -118,6 +134,18 @@ export class RoadmapBoardComponent implements OnInit {
 
   protected retryLoad(): void {
     this.loadRoadmap();
+  }
+
+  /**
+   * US22.3.2 — switches the board's axis grain and persists the choice for this roadmap (see
+   * `RoadmapTimeScaleService`). Purely a re-projection of the already-loaded `initiatives()` onto
+   * a differently-sliced axis — never touches `lanes`/`initiatives`, never calls
+   * `RoadmapApiService` (Security AC: a local, per-user view setting, not project data).
+   */
+  protected onTimeScaleChange(event: Event): void {
+    const scale = (event.target as HTMLSelectElement).value as RoadmapTimeScale;
+    this.timeScale.set(scale);
+    this.timeScaleService.write(this.projectRef, scale);
   }
 
   private loadRoadmap(): void {
