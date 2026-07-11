@@ -31,6 +31,10 @@ test.describe('Partage & export — happy path (US22.3.5)', () => {
         },
       ]),
     );
+    // US22.3.4 (merged since this spec was first written) — the board's loadRoadmap() now
+    // forkJoins a third endpoint; leaving it unstubbed lets the request hit the real network,
+    // which errors and never renders the board at all (the whole point of this test).
+    await page.route(`${API_BASE}/milestones`, route => fulfillJson(route, 200, []));
 
     let shareLinks: unknown[] = [];
     await page.route(`${API_BASE}/share-links`, async route => {
