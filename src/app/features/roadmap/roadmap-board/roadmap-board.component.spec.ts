@@ -6,7 +6,7 @@ import { Subject, of, throwError } from 'rxjs';
 import { describe, it, expect, vi } from 'vitest';
 import { RoadmapBoardComponent } from './roadmap-board.component';
 import { RoadmapApiService } from '../data-access/roadmap-api.service';
-import { Initiative, Lane } from '../data-access/roadmap.models';
+import { Initiative, Lane, Milestone } from '../data-access/roadmap.models';
 import { RoadmapTimeScaleService } from '../roadmap-time-scale.service';
 import { PERIOD_WIDTH_PX, RoadmapTimeScale } from '../roadmap-timeline';
 
@@ -25,12 +25,24 @@ const INITIATIVE_A: Initiative = {
   revision: 0,
 };
 
+const MILESTONE_A: Milestone = {
+  id: 200,
+  laneId: null,
+  name: 'Go/No-Go',
+  date: '2026-02-15',
+  temporalPrecision: 'DAY',
+  revision: 0,
+};
+
 interface ApiMock {
   listLanes: ReturnType<typeof vi.fn>;
   createLane: ReturnType<typeof vi.fn>;
   listInitiatives: ReturnType<typeof vi.fn>;
   createInitiative: ReturnType<typeof vi.fn>;
   updatePlacement: ReturnType<typeof vi.fn>;
+  listMilestones: ReturnType<typeof vi.fn>;
+  createMilestone: ReturnType<typeof vi.fn>;
+  updateMilestone: ReturnType<typeof vi.fn>;
 }
 
 interface TimeScaleServiceMock {
@@ -45,6 +57,9 @@ function makeApiMock(overrides: Partial<ApiMock> = {}): ApiMock {
     listInitiatives: vi.fn(() => of([INITIATIVE_A])),
     createInitiative: vi.fn(),
     updatePlacement: vi.fn(),
+    listMilestones: vi.fn(() => of([MILESTONE_A])),
+    createMilestone: vi.fn(),
+    updateMilestone: vi.fn(),
     ...overrides,
   };
 }
@@ -101,18 +116,20 @@ function submitForm(fixture: ComponentFixture<RoadmapBoardComponent>, formIndex:
 }
 
 describe('RoadmapBoardComponent', () => {
-  it('loads and renders lanes and initiatives on init', () => {
+  it('loads and renders lanes, initiatives and milestones on init', () => {
     const api = makeApiMock();
     const fixture = createFixture(api);
 
     expect(api.listLanes).toHaveBeenCalledWith(REF);
     expect(api.listInitiatives).toHaveBeenCalledWith(REF);
+    expect(api.listMilestones).toHaveBeenCalledWith(REF);
 
     const laneLabels = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('.rm-lane__label'),
     ).map(el => el.textContent?.trim());
     expect(laneLabels).toEqual(['Thème A', 'Thème B']);
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('app-initiative-bar')).toHaveLength(1);
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('app-milestone-marker')).toHaveLength(1);
   });
 
   it('shows a NOT_FOUND load error on 404 and recovers on retry', () => {
@@ -143,11 +160,26 @@ describe('RoadmapBoardComponent', () => {
     expect(text(fixture)).toContain('roadmap.board.load.errors.GENERIC');
   });
 
-  it('shows the empty-lanes message when there are no lanes yet', () => {
-    const api = makeApiMock({ listLanes: vi.fn(() => of([])), listInitiatives: vi.fn(() => of([])) });
+  it('shows the empty-lanes message when there are no lanes, initiatives or milestones yet', () => {
+    const api = makeApiMock({
+      listLanes: vi.fn(() => of([])),
+      listInitiatives: vi.fn(() => of([])),
+      listMilestones: vi.fn(() => of([])),
+    });
     const fixture = createFixture(api);
 
     expect(text(fixture)).toContain('roadmap.board.noLanes');
+  });
+
+  it('US22.3.4 — still renders the milestones row (no "empty" message) when there are no lanes but a laneless milestone exists', () => {
+    const api = makeApiMock({
+      listLanes: vi.fn(() => of([])),
+      listInitiatives: vi.fn(() => of([])),
+      listMilestones: vi.fn(() => of([MILESTONE_A])),
+    });
+    const fixture = createFixture(api);
+
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('app-milestone-marker')).toHaveLength(1);
   });
 
   describe('create lane', () => {
@@ -250,6 +282,176 @@ describe('RoadmapBoardComponent', () => {
       submitForm(fixture, 1);
 
       expect(text(fixture)).toContain(expectedKey);
+    });
+  });
+
+  describe('create milestone (US22.3.4 — Jalons stratégiques)', () => {
+    it('rejects an empty name client-side without calling the API', () => {
+      const api = makeApiMock();
+      const fixture = createFixture(api);
+
+      setInputValue(fixture, '#rm-new-milestone-date', '2026-06-01');
+      submitForm(fixture, 2);
+
+      expect(api.createMilestone).not.toHaveBeenCalled();
+      expect(text(fixture)).toContain('roadmap.board.createMilestone.errors.NAME_REQUIRED');
+    });
+
+    it('Error AC — rejects a missing date client-side with an explicit message (MILESTONE_DATE_REQUIRED), without calling the API', () => {
+      const api = makeApiMock();
+      const fixture = createFixture(api);
+
+      setInputValue(fixture, '#rm-new-milestone-name', 'Go/No-Go');
+      submitForm(fixture, 2);
+
+      expect(api.createMilestone).not.toHaveBeenCalled();
+      expect(text(fixture)).toContain('roadmap.board.createMilestone.errors.MILESTONE_DATE_REQUIRED');
+    });
+
+    it('AC — creates a milestone with no laneId required (cross-project marker), and renders it on success', () => {
+      const created: Milestone = { ...MILESTONE_A, id: 300, name: 'Comité de pilotage' };
+      const api = makeApiMock({ createMilestone: vi.fn(() => of(created)) });
+      const fixture = createFixture(api);
+
+      setInputValue(fixture, '#rm-new-milestone-name', 'Comité de pilotage');
+      setInputValue(fixture, '#rm-new-milestone-date', '2026-06-01');
+      submitForm(fixture, 2);
+
+      expect(api.createMilestone).toHaveBeenCalledWith(REF, { name: 'Comité de pilotage', date: '2026-06-01' });
+      expect((fixture.nativeElement as HTMLElement).querySelectorAll('app-milestone-marker')).toHaveLength(2);
+    });
+
+    it('AC — creates a milestone pinned to a chosen lane', () => {
+      const created: Milestone = { ...MILESTONE_A, id: 300, laneId: 10, name: 'Go/No-Go v2' };
+      const api = makeApiMock({ createMilestone: vi.fn(() => of(created)) });
+      const fixture = createFixture(api);
+
+      setInputValue(fixture, '#rm-new-milestone-name', 'Go/No-Go v2');
+      setInputValue(fixture, '#rm-new-milestone-date', '2026-06-01');
+      setInputValue(fixture, '#rm-new-milestone-lane', '10');
+      submitForm(fixture, 2);
+
+      expect(api.createMilestone).toHaveBeenCalledWith(REF, {
+        name: 'Go/No-Go v2',
+        date: '2026-06-01',
+        laneId: 10,
+      });
+    });
+
+    it.each([
+      [400, 'MILESTONE_DATE_REQUIRED', 'roadmap.board.createMilestone.errors.MILESTONE_DATE_REQUIRED'],
+      [400, 'MILESTONE_DATE_OUT_OF_BOUNDS', 'roadmap.board.createMilestone.errors.MILESTONE_DATE_OUT_OF_BOUNDS'],
+      [400, 'LANE_NOT_FOUND', 'roadmap.board.createMilestone.errors.LANE_NOT_FOUND'],
+      [403, undefined, 'roadmap.board.createMilestone.errors.FORBIDDEN'],
+      [404, undefined, 'roadmap.board.createMilestone.errors.NOT_FOUND'],
+      [500, undefined, 'roadmap.board.createMilestone.errors.GENERIC'],
+    ])('Error AC — maps a %d error (code=%s) to %s', (status, code, expectedKey) => {
+      const api = makeApiMock({
+        createMilestone: vi.fn(() =>
+          throwError(() => new HttpErrorResponse({ status, error: code ? { code } : null })),
+        ),
+      });
+      const fixture = createFixture(api);
+
+      setInputValue(fixture, '#rm-new-milestone-name', 'Go/No-Go');
+      setInputValue(fixture, '#rm-new-milestone-date', '2026-06-01');
+      submitForm(fixture, 2);
+
+      expect(text(fixture)).toContain(expectedKey);
+    });
+  });
+
+  describe('moving a milestone (date change AC, A11y AC, Security AC) — via the rendered marker', () => {
+    function pressArrowRightOnMarker(fixture: ComponentFixture<RoadmapBoardComponent>): void {
+      const marker = (fixture.nativeElement as HTMLElement).querySelector('.rm-milestone') as HTMLElement;
+      marker.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+      fixture.detectChanges();
+    }
+
+    it('AC/A11y — a keyboard nudge on the rendered marker applies the new date optimistically', () => {
+      const api = makeApiMock({
+        updateMilestone: vi.fn(() => of({ ...MILESTONE_A, date: '2026-04-01' })),
+      });
+      const fixture = createFixture(api);
+
+      pressArrowRightOnMarker(fixture);
+
+      expect(api.updateMilestone).toHaveBeenCalledWith(REF, MILESTONE_A.id, { date: expect.any(String) });
+      expect(text(fixture)).not.toContain('roadmap.board.milestoneDate.errors');
+    });
+
+    it('Security AC — rolls back and surfaces FORBIDDEN when the write 403s (fail-closed backend today)', () => {
+      const api = makeApiMock({
+        updateMilestone: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 403 }))),
+      });
+      const fixture = createFixture(api);
+
+      pressArrowRightOnMarker(fixture);
+
+      expect(text(fixture)).toContain('roadmap.board.milestoneDate.errors.FORBIDDEN');
+      // Rolled back — still exactly one marker, the board hasn't lost the milestone.
+      expect((fixture.nativeElement as HTMLElement).querySelectorAll('app-milestone-marker')).toHaveLength(1);
+    });
+
+    it.each([
+      [400, 'MILESTONE_DATE_OUT_OF_BOUNDS', 'roadmap.board.milestoneDate.errors.MILESTONE_DATE_OUT_OF_BOUNDS'],
+      [400, 'LANE_NOT_FOUND', 'roadmap.board.milestoneDate.errors.LANE_NOT_FOUND'],
+      [404, undefined, 'roadmap.board.milestoneDate.errors.NOT_FOUND'],
+      [500, undefined, 'roadmap.board.milestoneDate.errors.GENERIC'],
+    ])('maps a %d date-change error (code=%s) to %s', (status, code, expectedKey) => {
+      const api = makeApiMock({
+        updateMilestone: vi.fn(() =>
+          throwError(() => new HttpErrorResponse({ status, error: code ? { code } : null })),
+        ),
+      });
+      const fixture = createFixture(api);
+
+      pressArrowRightOnMarker(fixture);
+
+      expect(text(fixture)).toContain(expectedKey);
+    });
+
+    it('A11y — announces a "moved" message optimistically, then corrects it to "reverted" on rollback', () => {
+      const api = makeApiMock({
+        updateMilestone: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 403 }))),
+      });
+      const fixture = createFixture(api);
+
+      pressArrowRightOnMarker(fixture);
+
+      const liveRegion = (fixture.nativeElement as HTMLElement).querySelector('[aria-live="polite"]');
+      expect(liveRegion?.textContent).toContain('roadmap.board.milestones.marker.announceReverted');
+    });
+
+    it('Staleness guard — an out-of-order (older) PATCH response never clobbers a newer date change', () => {
+      const responses: Subject<Milestone>[] = [];
+      const api = makeApiMock({
+        updateMilestone: vi.fn(() => {
+          const subject = new Subject<Milestone>();
+          responses.push(subject);
+          return subject.asObservable();
+        }),
+      });
+      const fixture = createFixture(api);
+      const marker = (fixture.nativeElement as HTMLElement).querySelector('.rm-milestone') as HTMLElement;
+
+      marker.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+      fixture.detectChanges();
+      marker.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+      fixture.detectChanges();
+
+      expect(responses).toHaveLength(2);
+
+      const firstRequestBody = api.updateMilestone.mock.calls[0][2] as { date: string };
+      const secondRequestBody = api.updateMilestone.mock.calls[1][2] as { date: string };
+
+      // The SECOND (newer) request's response arrives FIRST (network reordering).
+      responses[1].next({ ...MILESTONE_A, ...secondRequestBody });
+      // The FIRST (now-superseded) request's response arrives LAST — must be a no-op.
+      responses[0].next({ ...MILESTONE_A, ...firstRequestBody });
+      fixture.detectChanges();
+
+      expect(marker.style.left).toBe(`${QUARTER_WIDTH_PX * 2}px`);
     });
   });
 

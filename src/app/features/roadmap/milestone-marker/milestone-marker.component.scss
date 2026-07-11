@@ -1,0 +1,49 @@
+.rm-milestone {
+  position: absolute;
+  box-sizing: border-box;
+  top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px 0 4px;
+  // Distinct shape (diamond icon, see template) + visible text label — never color alone
+  // (A11y AC "sans dépendre uniquement de la couleur"). Contraste texte blanc / fond #a34f00
+  // vérifié WCAG 2.1 AA (~5.7:1, >= 4.5:1 requis).
+  background: #a34f00;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  cursor: grab;
+  touch-action: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+  max-width: 160px;
+
+  &--dragging {
+    cursor: grabbing;
+    opacity: 0.85;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 35%);
+  }
+}
+
+.rm-milestone__icon {
+  flex: none;
+  fill: currentcolor;
+}
+
+.rm-milestone__label {
+  flex: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.rm-milestone:focus-visible {
+  outline: 3px solid #202124;
+  outline-offset: 2px;
+}

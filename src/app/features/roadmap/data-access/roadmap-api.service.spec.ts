@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { HttpErrorResponse } from '@angular/common/http';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { RoadmapApiService } from './roadmap-api.service';
-import { Initiative, Lane, RoadmapApiError, RoadmapProjectRef } from './roadmap.models';
+import { Initiative, Lane, Milestone, RoadmapApiError, RoadmapProjectRef } from './roadmap.models';
 import { environment } from '../../../../environments/environment';
 
 const REF: RoadmapProjectRef = { tenantId: 1, teamId: 2, projectId: 3 };
@@ -18,6 +18,14 @@ const INITIATIVE: Initiative = {
   fuzzyPeriodStart: null,
   fuzzyPeriodEnd: null,
   temporalPrecision: 'QUARTER',
+  revision: 0,
+};
+const MILESTONE: Milestone = {
+  id: 200,
+  laneId: null,
+  name: 'Go/No-Go',
+  date: '2026-06-01',
+  temporalPrecision: 'DAY',
   revision: 0,
 };
 
@@ -255,6 +263,151 @@ describe('RoadmapApiService', () => {
       service.updatePlacement(REF, 100, { laneId: 10 }).subscribe({ error: e => (error = e) });
 
       httpMock.expectOne(`${BASE}/initiatives/100`).flush(null, { status: 404, statusText: 'Not Found' });
+
+      expect(error?.status).toBe(404);
+    });
+  });
+
+  describe('listMilestones', () => {
+    it('GETs the milestones for a project', () => {
+      let result: Milestone[] | undefined;
+      service.listMilestones(REF).subscribe(v => (result = v));
+
+      const req = httpMock.expectOne(`${BASE}/milestones`);
+      expect(req.request.method).toBe('GET');
+      req.flush([MILESTONE]);
+
+      expect(result).toEqual([MILESTONE]);
+    });
+
+    it('propagates 404 when the tenant/team/project triplet resolves to no visible project', () => {
+      let error: HttpErrorResponse | undefined;
+      service.listMilestones(REF).subscribe({ error: e => (error = e) });
+
+      httpMock.expectOne(`${BASE}/milestones`).flush(null, { status: 404, statusText: 'Not Found' });
+
+      expect(error?.status).toBe(404);
+    });
+  });
+
+  describe('createMilestone', () => {
+    it('POSTs the milestone payload (no laneId required) and returns the created milestone', () => {
+      let result: Milestone | undefined;
+      service.createMilestone(REF, { name: 'Go/No-Go', date: '2026-06-01' }).subscribe(v => (result = v));
+
+      const req = httpMock.expectOne(`${BASE}/milestones`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ name: 'Go/No-Go', date: '2026-06-01' });
+      req.flush(MILESTONE, { status: 201, statusText: 'Created' });
+
+      expect(result).toEqual(MILESTONE);
+    });
+
+    it('propagates 400 (MILESTONE_DATE_REQUIRED) when no date is supplied', () => {
+      let error: HttpErrorResponse | undefined;
+      service
+        .createMilestone(REF, { name: 'Go/No-Go' } as unknown as { name: string; date: string })
+        .subscribe({ error: e => (error = e) });
+
+      const body: RoadmapApiError = { code: 'MILESTONE_DATE_REQUIRED', message: 'A date is required' };
+      httpMock.expectOne(`${BASE}/milestones`).flush(body, { status: 400, statusText: 'Bad Request' });
+
+      expect(error?.status).toBe(400);
+      expect((error?.error as RoadmapApiError).code).toBe('MILESTONE_DATE_REQUIRED');
+    });
+
+    it('propagates 400 (MILESTONE_DATE_OUT_OF_BOUNDS) when the date is outside the project bounds', () => {
+      let error: HttpErrorResponse | undefined;
+      service.createMilestone(REF, { name: 'Go/No-Go', date: '1999-01-01' }).subscribe({ error: e => (error = e) });
+
+      const body: RoadmapApiError = { code: 'MILESTONE_DATE_OUT_OF_BOUNDS', message: 'Date outside project bounds' };
+      httpMock.expectOne(`${BASE}/milestones`).flush(body, { status: 400, statusText: 'Bad Request' });
+
+      expect(error?.status).toBe(400);
+      expect((error?.error as RoadmapApiError).code).toBe('MILESTONE_DATE_OUT_OF_BOUNDS');
+    });
+
+    it('propagates 400 (LANE_NOT_FOUND) for an unknown/foreign laneId', () => {
+      let error: HttpErrorResponse | undefined;
+      service
+        .createMilestone(REF, { name: 'Go/No-Go', date: '2026-06-01', laneId: 999 })
+        .subscribe({ error: e => (error = e) });
+
+      const body: RoadmapApiError = { code: 'LANE_NOT_FOUND', message: 'No lane 999 on project 3' };
+      httpMock.expectOne(`${BASE}/milestones`).flush(body, { status: 400, statusText: 'Bad Request' });
+
+      expect(error?.status).toBe(400);
+      expect((error?.error as RoadmapApiError).code).toBe('LANE_NOT_FOUND');
+    });
+
+    it('propagates a bodyless 403 when the write is unauthorized (fail-closed today)', () => {
+      let error: HttpErrorResponse | undefined;
+      service.createMilestone(REF, { name: 'Go/No-Go', date: '2026-06-01' }).subscribe({ error: e => (error = e) });
+
+      httpMock.expectOne(`${BASE}/milestones`).flush(null, { status: 403, statusText: 'Forbidden' });
+
+      expect(error?.status).toBe(403);
+    });
+
+    it('propagates a bodyless 404 when the project is not visible', () => {
+      let error: HttpErrorResponse | undefined;
+      service.createMilestone(REF, { name: 'Go/No-Go', date: '2026-06-01' }).subscribe({ error: e => (error = e) });
+
+      httpMock.expectOne(`${BASE}/milestones`).flush(null, { status: 404, statusText: 'Not Found' });
+
+      expect(error?.status).toBe(404);
+    });
+  });
+
+  describe('updateMilestone', () => {
+    it('PATCHes only the supplied fields and returns the updated milestone', () => {
+      let result: Milestone | undefined;
+      service.updateMilestone(REF, 200, { date: '2026-07-01' }).subscribe(v => (result = v));
+
+      const req = httpMock.expectOne(`${BASE}/milestones/200`);
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({ date: '2026-07-01' });
+      req.flush({ ...MILESTONE, date: '2026-07-01' });
+
+      expect(result?.date).toBe('2026-07-01');
+    });
+
+    it('propagates 400 (MILESTONE_DATE_OUT_OF_BOUNDS) when the new date is outside the project bounds', () => {
+      let error: HttpErrorResponse | undefined;
+      service.updateMilestone(REF, 200, { date: '1999-01-01' }).subscribe({ error: e => (error = e) });
+
+      const body: RoadmapApiError = { code: 'MILESTONE_DATE_OUT_OF_BOUNDS', message: 'Date outside project bounds' };
+      httpMock.expectOne(`${BASE}/milestones/200`).flush(body, { status: 400, statusText: 'Bad Request' });
+
+      expect(error?.status).toBe(400);
+      expect((error?.error as RoadmapApiError).code).toBe('MILESTONE_DATE_OUT_OF_BOUNDS');
+    });
+
+    it('propagates 400 (LANE_NOT_FOUND) when re-laning to an unknown lane', () => {
+      let error: HttpErrorResponse | undefined;
+      service.updateMilestone(REF, 200, { laneId: 999 }).subscribe({ error: e => (error = e) });
+
+      const body: RoadmapApiError = { code: 'LANE_NOT_FOUND', message: 'No lane 999 on project 3' };
+      httpMock.expectOne(`${BASE}/milestones/200`).flush(body, { status: 400, statusText: 'Bad Request' });
+
+      expect(error?.status).toBe(400);
+      expect((error?.error as RoadmapApiError).code).toBe('LANE_NOT_FOUND');
+    });
+
+    it('propagates a bodyless 403 when the write is unauthorized (fail-closed today)', () => {
+      let error: HttpErrorResponse | undefined;
+      service.updateMilestone(REF, 200, { date: '2026-07-01' }).subscribe({ error: e => (error = e) });
+
+      httpMock.expectOne(`${BASE}/milestones/200`).flush(null, { status: 403, statusText: 'Forbidden' });
+
+      expect(error?.status).toBe(403);
+    });
+
+    it('propagates a bodyless 404 when the project or the milestone is not visible', () => {
+      let error: HttpErrorResponse | undefined;
+      service.updateMilestone(REF, 200, { date: '2026-07-01' }).subscribe({ error: e => (error = e) });
+
+      httpMock.expectOne(`${BASE}/milestones/200`).flush(null, { status: 404, statusText: 'Not Found' });
 
       expect(error?.status).toBe(404);
     });

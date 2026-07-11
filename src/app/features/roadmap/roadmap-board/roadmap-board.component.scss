@@ -59,6 +59,14 @@
   padding-bottom: 0.25rem;
 }
 
+// US22.3.4 — dedicated row for strategic-milestone markers, distinct from the per-lane bars
+// overlay below: a milestone may have no laneId at all (cross-project marker), so it isn't
+// positioned against the lanes grid's row math at all — see `RoadmapBoardComponent`'s class TSDoc.
+.rm-board__milestones-row {
+  position: relative;
+  height: 32px;
+}
+
 .rm-board__lanes {
   display: flex;
   flex-direction: column;

@@ -17,10 +17,13 @@ import {
   Initiative,
   InitiativePlacementChange,
   Lane,
+  Milestone,
+  MilestoneDateChange,
   RoadmapApiError,
   RoadmapProjectRef,
 } from '../data-access/roadmap.models';
 import { InitiativeBarComponent } from '../initiative-bar/initiative-bar.component';
+import { MilestoneMarkerComponent } from '../milestone-marker/milestone-marker.component';
 import { RoadmapTimeScaleService } from '../roadmap-time-scale.service';
 import { PERIOD_WIDTH_PX, PeriodCell, RoadmapTimeScale, buildTimeAxis } from '../roadmap-timeline';
 
@@ -57,6 +60,17 @@ import { PERIOD_WIDTH_PX, PeriodCell, RoadmapTimeScale, buildTimeAxis } from '..
  * component's error handling for 403 is fully exercised by tests; it is simply the outcome any
  * real write will hit until that backend gap closes.
  *
+ * **Strategic milestones (US22.3.4 — "Jalons stratégiques").** Loaded alongside lanes/initiatives
+ * and rendered as `MilestoneMarkerComponent`s in their own `.rm-board__milestones-row` band —
+ * deliberately **not** interleaved into the per-lane bars overlay (`.rm-board__bars`): a milestone
+ * is punctual and may have no `laneId` at all (a cross-project marker, see `Milestone`'s TSDoc),
+ * so giving it a dedicated row sidesteps re-deriving `InitiativeBarComponent`'s lane-row math for
+ * an object that doesn't always belong to a lane, without touching that existing, tested overlay.
+ * Same optimistic-update/rollback/staleness-guard flow as `onPlacementChange` below, applied to
+ * `onMilestoneDateChange`. Security AC: no client-side role gating — same fail-closed backend
+ * policy (`RoadmapEditPolicy`, shared with initiatives) is the sole enforcement point; an
+ * unauthorized create/date-change attempt 403s and is rolled back, same posture as initiatives.
+ *
  * **Route.** Expects `tenantId`/`teamId`/`projectId` as route params (mirroring the backend's
  * own path-segment shape — see {@link RoadmapProjectRef}'s TSDoc on why, given
  * `pivot-core-starter` isn't published yet). Not wired to this bootstrap's placeholder Home
@@ -68,7 +82,7 @@ import { PERIOD_WIDTH_PX, PeriodCell, RoadmapTimeScale, buildTimeAxis } from '..
   selector: 'app-roadmap-board',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InitiativeBarComponent, TranslocoPipe],
+  imports: [InitiativeBarComponent, MilestoneMarkerComponent, TranslocoPipe],
   templateUrl: './roadmap-board.component.html',
   styleUrl: './roadmap-board.component.scss',
 })
@@ -119,6 +133,29 @@ export class RoadmapBoardComponent implements OnInit {
    */
   private readonly pendingPlacementTokens = new Map<number, symbol>();
 
+  // --- US22.3.4 — Jalons stratégiques ---------------------------------------------------------
+
+  protected readonly milestones = signal<Milestone[]>([]);
+
+  protected readonly newMilestoneName = signal('');
+  protected readonly newMilestoneDate = signal('');
+  protected readonly newMilestoneLaneId = signal<number | null>(null);
+  protected readonly creatingMilestone = signal(false);
+  protected readonly createMilestoneErrorKey = signal<string | null>(null);
+
+  protected readonly milestoneDateErrorKey = signal<string | null>(null);
+
+  /** Same staleness-guard pattern as {@link pendingPlacementTokens}, scoped to milestone date changes. */
+  private readonly pendingMilestoneTokens = new Map<number, symbol>();
+
+  /** Resolves a lane's display name for a milestone's aria-label — `null` when the milestone has no `laneId` (cross-project marker, see `Milestone`'s TSDoc). */
+  protected laneNameFor(laneId: number | null): string | null {
+    if (laneId === null) {
+      return null;
+    }
+    return this.lanes().find(lane => lane.id === laneId)?.name ?? null;
+  }
+
   private readProjectRef(): RoadmapProjectRef {
     const params = this.route.snapshot.paramMap;
     return {
@@ -155,12 +192,14 @@ export class RoadmapBoardComponent implements OnInit {
     forkJoin({
       lanes: this.roadmapApi.listLanes(this.projectRef),
       initiatives: this.roadmapApi.listInitiatives(this.projectRef),
+      milestones: this.roadmapApi.listMilestones(this.projectRef),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ lanes, initiatives }) => {
+        next: ({ lanes, initiatives, milestones }) => {
           this.lanes.set(lanes);
           this.initiatives.set(initiatives);
+          this.milestones.set(milestones);
           this.loading.set(false);
         },
         error: (error: HttpErrorResponse) => {
@@ -346,5 +385,137 @@ export class RoadmapBoardComponent implements OnInit {
       return 'roadmap.board.placement.errors.NOT_FOUND';
     }
     return 'roadmap.board.placement.errors.GENERIC';
+  }
+
+  // --- US22.3.4 — Jalons stratégiques -----------------------------------------------------------
+
+  protected onMilestoneNameInput(event: Event): void {
+    this.newMilestoneName.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onMilestoneDateInput(event: Event): void {
+    this.newMilestoneDate.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onMilestoneLaneChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.newMilestoneLaneId.set(value ? Number(value) : null);
+  }
+
+  /**
+   * Error AC ("given un jalon sans date... rejeté avec un message explicite" —
+   * `MILESTONE_DATE_REQUIRED`). The date requirement is checked client-side first (immediate
+   * feedback, no round trip) — the identical server error is handled the same way if it still
+   * occurs. "Out of bounds" (`MILESTONE_DATE_OUT_OF_BOUNDS`) cannot be pre-validated client-side —
+   * the project's bounds are derived server-side from the other tasks already planned on it (see
+   * the backlog file's PO Agent decision) — so that error is always surfaced from the 400 response.
+   */
+  protected submitCreateMilestone(): void {
+    const name = this.newMilestoneName().trim();
+    const date = this.newMilestoneDate();
+    const laneId = this.newMilestoneLaneId();
+    this.createMilestoneErrorKey.set(null);
+
+    if (!name) {
+      this.createMilestoneErrorKey.set('roadmap.board.createMilestone.errors.NAME_REQUIRED');
+      return;
+    }
+    if (!date) {
+      this.createMilestoneErrorKey.set('roadmap.board.createMilestone.errors.MILESTONE_DATE_REQUIRED');
+      return;
+    }
+
+    this.creatingMilestone.set(true);
+    this.roadmapApi
+      .createMilestone(this.projectRef, { name, date, ...(laneId !== null ? { laneId } : {}) })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: created => {
+          this.milestones.update(list => [...list, created]);
+          this.newMilestoneName.set('');
+          this.newMilestoneDate.set('');
+          this.newMilestoneLaneId.set(null);
+          this.creatingMilestone.set(false);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.creatingMilestone.set(false);
+          this.createMilestoneErrorKey.set(this.resolveCreateMilestoneErrorKey(error));
+        },
+      });
+  }
+
+  private resolveCreateMilestoneErrorKey(error: HttpErrorResponse): string {
+    const code = (error.error as RoadmapApiError | undefined)?.code;
+    if (error.status === 400 && code) {
+      // MILESTONE_DATE_REQUIRED / MILESTONE_DATE_OUT_OF_BOUNDS / LANE_NOT_FOUND all have a
+      // dedicated catalogue entry (gérés explicitement — see this US's implementation notes).
+      return `roadmap.board.createMilestone.errors.${code}`;
+    }
+    if (error.status === 403) {
+      return 'roadmap.board.createMilestone.errors.FORBIDDEN';
+    }
+    if (error.status === 404) {
+      return 'roadmap.board.createMilestone.errors.NOT_FOUND';
+    }
+    return 'roadmap.board.createMilestone.errors.GENERIC';
+  }
+
+  /**
+   * See `onPlacementChange`'s TSDoc — identical optimistic-update/rollback/staleness-guard flow,
+   * applied to a milestone's `date` instead of an initiative's fuzzy period. This is also the AC
+   * "changement de date propagé partout" in action: the same `PATCH` this view issues is the
+   * sole write path a future Gantt consumer would use too (see `Milestone`'s TSDoc) — there is no
+   * separate propagation step, both views simply read the same row back.
+   */
+  protected onMilestoneDateChange(milestone: Milestone, change: MilestoneDateChange): void {
+    const previous = this.milestones().find(m => m.id === milestone.id) ?? milestone;
+    const optimistic: Milestone = { ...previous, ...change };
+    const token = Symbol();
+    this.pendingMilestoneTokens.set(milestone.id, token);
+
+    this.milestoneDateErrorKey.set(null);
+    this.milestones.update(list => list.map(m => (m.id === milestone.id ? optimistic : m)));
+    this.announcement.set(
+      this.transloco.translate('roadmap.board.milestones.marker.announceMoved', {
+        name: previous.name,
+        date: change.date,
+      }),
+    );
+
+    this.roadmapApi
+      .updateMilestone(this.projectRef, milestone.id, change)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: updated => {
+          if (this.pendingMilestoneTokens.get(milestone.id) !== token) {
+            return; // superseded by a more recent date change on this milestone
+          }
+          this.milestones.update(list => list.map(m => (m.id === milestone.id ? updated : m)));
+        },
+        error: (error: HttpErrorResponse) => {
+          if (this.pendingMilestoneTokens.get(milestone.id) !== token) {
+            return; // superseded — a newer change already owns this milestone's outcome
+          }
+          this.milestones.update(list => list.map(m => (m.id === milestone.id ? previous : m)));
+          this.milestoneDateErrorKey.set(this.resolveMilestoneDateErrorKey(error));
+          this.announcement.set(
+            this.transloco.translate('roadmap.board.milestones.marker.announceReverted', { name: previous.name }),
+          );
+        },
+      });
+  }
+
+  private resolveMilestoneDateErrorKey(error: HttpErrorResponse): string {
+    const code = (error.error as RoadmapApiError | undefined)?.code;
+    if (error.status === 400 && code) {
+      return `roadmap.board.milestoneDate.errors.${code}`;
+    }
+    if (error.status === 403) {
+      return 'roadmap.board.milestoneDate.errors.FORBIDDEN';
+    }
+    if (error.status === 404) {
+      return 'roadmap.board.milestoneDate.errors.NOT_FOUND';
+    }
+    return 'roadmap.board.milestoneDate.errors.GENERIC';
   }
 }
