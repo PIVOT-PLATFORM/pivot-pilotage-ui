@@ -77,7 +77,10 @@ test.describe('Roadmap rapide — happy path (US22.3.1)', () => {
     // AC "create a lane".
     await page.getByLabel(/Nom de la lane/).fill('Thème A');
     await page.getByRole('button', { name: 'Créer la lane' }).click();
-    await expect(page.getByText('Thème A')).toBeVisible();
+    // `.rm-lane__label` (not a plain getByText) — the same lane name is also rendered as an
+    // `<option>` inside the create-initiative `<select>` below, which would make a bare text
+    // query ambiguous (strict-mode violation).
+    await expect(page.locator('.rm-lane__label', { hasText: 'Thème A' })).toBeVisible();
 
     // AC1 — pose an initiative on that lane without requiring tasks or precise dates.
     await page.getByLabel("Nom de l'initiative").fill('Initiative A');
