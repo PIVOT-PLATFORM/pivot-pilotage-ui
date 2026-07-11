@@ -1,0 +1,149 @@
+<div class="gantt-deps">
+  <h2 class="gantt-deps__title">{{ 'gantt.dependencies.title' | transloco }}</h2>
+
+  <p class="gantt-deps__sr-only" aria-live="polite">{{ announcement() }}</p>
+
+  @if (loading()) {
+    <p class="gantt-deps__status" role="status">{{ 'gantt.dependencies.loading' | transloco }}</p>
+  } @else if (loadErrorKey()) {
+    <div class="gantt-deps__status gantt-deps__status--error" role="alert">
+      <p>{{ loadErrorKey()! | transloco }}</p>
+      <button type="button" (click)="retryLoad()">{{ 'gantt.dependencies.retry' | transloco }}</button>
+    </div>
+  } @else {
+    @if (!hasEnoughTasks()) {
+      <p class="gantt-deps__empty">{{ 'gantt.dependencies.tasksEmpty' | transloco }}</p>
+    } @else {
+      <form class="gantt-deps__form" (submit)="$event.preventDefault(); submitCreate()">
+        <div class="gantt-deps__field">
+          <label for="gantt-deps-predecessor">{{ 'gantt.dependencies.create.predecessorLabel' | transloco }}</label>
+          <select id="gantt-deps-predecessor" [value]="newPredecessorId() ?? ''" (change)="onPredecessorChange($event)">
+            <option value="">{{ 'gantt.dependencies.create.predecessorPlaceholder' | transloco }}</option>
+            @for (task of tasks(); track task.taskId) {
+              <option [value]="task.taskId">{{ task.wbsCode }} — {{ task.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="gantt-deps__field">
+          <label for="gantt-deps-successor">{{ 'gantt.dependencies.create.successorLabel' | transloco }}</label>
+          <select id="gantt-deps-successor" [value]="newSuccessorId() ?? ''" (change)="onSuccessorChange($event)">
+            <option value="">{{ 'gantt.dependencies.create.successorPlaceholder' | transloco }}</option>
+            @for (task of tasks(); track task.taskId) {
+              <option [value]="task.taskId">{{ task.wbsCode }} — {{ task.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="gantt-deps__field">
+          <label for="gantt-deps-link-type">{{ 'gantt.dependencies.create.linkTypeLabel' | transloco }}</label>
+          <select id="gantt-deps-link-type" [value]="newLinkType()" (change)="onLinkTypeChange($event)">
+            @for (type of linkTypes; track type) {
+              <option [value]="type">{{ ('gantt.dependencies.linkType.' + type) | transloco }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="gantt-deps__field">
+          <label for="gantt-deps-lag">{{ 'gantt.dependencies.create.lagLabel' | transloco }}</label>
+          <input
+            id="gantt-deps-lag"
+            type="number"
+            step="1"
+            [value]="newLagMinutesInput()"
+            (input)="onLagInput($event)"
+            [attr.aria-invalid]="createErrorKey() ? true : null"
+            [attr.aria-describedby]="createErrorKey() ? 'gantt-deps-create-error' : 'gantt-deps-lag-hint'"
+          />
+          <p id="gantt-deps-lag-hint" class="gantt-deps__hint">{{ 'gantt.dependencies.create.lagHint' | transloco }}</p>
+        </div>
+
+        <button type="submit" [disabled]="creating()">{{ 'gantt.dependencies.create.submit' | transloco }}</button>
+
+        @if (createErrorKey()) {
+          <p id="gantt-deps-create-error" class="gantt-deps__error" role="alert">{{ createErrorKey()! | transloco }}</p>
+        }
+      </form>
+    }
+
+    @if (dependencies().length === 0) {
+      <p class="gantt-deps__empty">{{ 'gantt.dependencies.empty' | transloco }}</p>
+    } @else {
+      <table class="gantt-deps__table">
+        <thead>
+          <tr>
+            <th scope="col">{{ 'gantt.dependencies.columns.predecessor' | transloco }}</th>
+            <th scope="col">{{ 'gantt.dependencies.columns.successor' | transloco }}</th>
+            <th scope="col">{{ 'gantt.dependencies.columns.type' | transloco }}</th>
+            <th scope="col">{{ 'gantt.dependencies.columns.lag' | transloco }}</th>
+            <th scope="col">{{ 'gantt.dependencies.columns.actions' | transloco }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (dependency of dependencies(); track dependency.dependencyId) {
+            <tr>
+              <td>{{ taskLabel(dependency.predecessorTaskId) }}</td>
+              <td>{{ taskLabel(dependency.successorTaskId) }}</td>
+              <td>
+                @if (editingId() === dependency.dependencyId) {
+                  <select
+                    [value]="editLinkType()"
+                    (change)="onEditLinkTypeChange($event)"
+                    [attr.aria-label]="'gantt.dependencies.create.linkTypeLabel' | transloco"
+                  >
+                    @for (type of linkTypes; track type) {
+                      <option [value]="type">{{ ('gantt.dependencies.linkType.' + type) | transloco }}</option>
+                    }
+                  </select>
+                } @else {
+                  {{ ('gantt.dependencies.linkType.' + dependency.linkType) | transloco }}
+                }
+              </td>
+              <td>
+                @if (editingId() === dependency.dependencyId) {
+                  <input
+                    type="number"
+                    step="1"
+                    [value]="editLagMinutesInput()"
+                    (input)="onEditLagInput($event)"
+                    [attr.aria-label]="'gantt.dependencies.create.lagLabel' | transloco"
+                  />
+                } @else {
+                  {{
+                    'gantt.dependencies.lagValue'
+                      | transloco: { minutes: dependency.lagMinutes, days: daysEquivalentLabel(dependency.lagMinutes) }
+                  }}
+                }
+              </td>
+              <td>
+                @if (editingId() === dependency.dependencyId) {
+                  <button type="button" (click)="confirmEdit(dependency)" [disabled]="updating()">
+                    {{ 'gantt.dependencies.edit.confirmButton' | transloco }}
+                  </button>
+                  <button type="button" (click)="cancelEdit()">{{ 'gantt.dependencies.edit.cancelButton' | transloco }}</button>
+                } @else if (confirmingDeleteId() === dependency.dependencyId) {
+                  <span>{{ 'gantt.dependencies.delete.confirmPrompt' | transloco }}</span>
+                  <button type="button" (click)="confirmDelete(dependency)">
+                    {{ 'gantt.dependencies.delete.confirmButton' | transloco }}
+                  </button>
+                  <button type="button" (click)="cancelDelete()">{{ 'gantt.dependencies.delete.cancelButton' | transloco }}</button>
+                } @else {
+                  <button type="button" (click)="startEdit(dependency)">{{ 'gantt.dependencies.edit.button' | transloco }}</button>
+                  <button type="button" (click)="requestDelete(dependency.dependencyId)">
+                    {{ 'gantt.dependencies.delete.button' | transloco }}
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (updateErrorKey()) {
+        <p class="gantt-deps__error" role="alert">{{ updateErrorKey()! | transloco }}</p>
+      }
+      @if (deleteErrorKey()) {
+        <p class="gantt-deps__error" role="alert">{{ deleteErrorKey()! | transloco }}</p>
+      }
+    }
+  }
+</div>
