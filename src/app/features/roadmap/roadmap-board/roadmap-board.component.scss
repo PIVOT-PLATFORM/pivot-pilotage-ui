@@ -25,6 +25,14 @@
   gap: 0.5rem;
 }
 
+// US22.3.5 — share/export toolbar.
+.rm-board__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
 .rm-board__error {
   flex-basis: 100%;
   margin: 0;
@@ -118,7 +126,8 @@
 .rm-board__form select:focus-visible,
 .rm-board__form button:focus-visible,
 .rm-board__status button:focus-visible,
-.rm-board__scale select:focus-visible {
+.rm-board__scale select:focus-visible,
+.rm-board__toolbar button:focus-visible {
   outline: 3px solid #202124;
   outline-offset: 2px;
 }
