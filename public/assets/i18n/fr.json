@@ -94,6 +94,81 @@
           "GENERIC": "Impossible de mettre à jour le jalon."
         }
       }
+    },
+    "export": {
+      "pngButton": "Exporter en PNG",
+      "pdfButton": "Exporter en PDF",
+      "exporting": "Export en cours…",
+      "errors": {
+        "GENERIC": "Impossible d'exporter la roadmap."
+      }
+    },
+    "share": {
+      "toggleButton": "Liens de partage",
+      "title": "Liens de partage",
+      "create": {
+        "expiresAtLabel": "Expiration (optionnelle)",
+        "submit": "Créer un lien",
+        "errors": {
+          "EXPIRY_INVALID": "La date d'expiration doit être strictement dans le futur.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour créer un lien de partage sur ce projet.",
+          "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de créer le lien de partage."
+        }
+      },
+      "tokenReveal": {
+        "title": "Lien créé — copiez-le maintenant",
+        "warning": "Ce lien ne sera plus jamais affiché après la fermeture de ce message. Copiez-le maintenant si ce n'est pas déjà fait.",
+        "copyButton": "Copier le lien",
+        "copied": "Lien copié.",
+        "copyError": "Copie automatique impossible — sélectionnez et copiez le texte du lien manuellement.",
+        "dismiss": "Fermer"
+      },
+      "list": {
+        "loading": "Chargement des liens de partage…",
+        "retry": "Réessayer",
+        "empty": "Aucun lien de partage pour l'instant.",
+        "noExpiry": "Sans expiration",
+        "columns": {
+          "createdAt": "Créé le",
+          "expiresAt": "Expire le",
+          "status": "Statut",
+          "actions": "Actions"
+        },
+        "status": {
+          "active": "Actif",
+          "revoked": "Révoqué",
+          "expired": "Expiré"
+        },
+        "errors": {
+          "FORBIDDEN": "Vous n'avez pas les droits pour consulter les liens de partage de ce projet.",
+          "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de charger les liens de partage."
+        }
+      },
+      "revoke": {
+        "button": "Révoquer",
+        "confirmPrompt": "Confirmer la révocation ?",
+        "confirmButton": "Oui, révoquer",
+        "cancelButton": "Annuler",
+        "errors": {
+          "FORBIDDEN": "Vous n'avez pas les droits pour révoquer ce lien de partage.",
+          "NOT_FOUND": "Ce lien de partage est introuvable.",
+          "GENERIC": "Impossible de révoquer le lien de partage."
+        }
+      }
+    },
+    "publicShare": {
+      "loading": "Chargement de la roadmap partagée…",
+      "errorTitle": "Lien de partage indisponible",
+      "errors": {
+        "INVALID": "Ce lien de partage est invalide, expiré ou a été révoqué."
+      },
+      "readonlyNotice": "Vue en lecture seule — vous ne pouvez pas modifier cette roadmap.",
+      "noLanes": "Cette roadmap ne contient aucune lane pour l'instant.",
+      "bar": {
+        "ariaLabel": "Initiative {{name}}, {{period}}."
+      }
     }
   }
 }
