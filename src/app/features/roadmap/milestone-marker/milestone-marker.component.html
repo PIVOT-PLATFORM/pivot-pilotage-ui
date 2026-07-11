@@ -1,0 +1,24 @@
+<div
+  class="rm-milestone"
+  [class.rm-milestone--dragging]="dragging()"
+  [style.left.px]="leftPx()"
+  tabindex="0"
+  role="button"
+  [attr.aria-label]="
+    laneName()
+      ? ('roadmap.board.milestones.marker.ariaLabelWithLane'
+        | transloco: { name: milestone().name, period: periodLabel(), lane: laneName() })
+      : ('roadmap.board.milestones.marker.ariaLabel' | transloco: { name: milestone().name, period: periodLabel() })
+  "
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp($event)"
+  (pointercancel)="onPointerCancel($event)"
+  (lostpointercapture)="onPointerCancel($event)"
+  (keydown)="onKeyDown($event)"
+>
+  <svg class="rm-milestone__icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+    <path d="M8 0 L16 8 L8 16 L0 8 Z" />
+  </svg>
+  <span class="rm-milestone__label">{{ milestone().name }}</span>
+</div>
