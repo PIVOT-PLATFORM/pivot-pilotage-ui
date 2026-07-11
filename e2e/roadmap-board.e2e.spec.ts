@@ -24,6 +24,11 @@ async function fulfillJson(route: Route, status: number, json: unknown): Promise
   await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(json) });
 }
 
+/** Stubs the `/milestones` GET (empty by default) — every spec below needs this route to exist so `RoadmapBoardComponent`'s `forkJoin` (US22.3.4) completes, even when a spec has nothing to say about milestones. */
+async function stubEmptyMilestones(page: Page): Promise<void> {
+  await page.route(`${API_BASE}/milestones`, route => fulfillJson(route, 200, []));
+}
+
 test.describe('Roadmap rapide — happy path (US22.3.1)', () => {
   test('creates a lane, poses an initiative on it without dates, and moves it with the keyboard', async ({
     page,
@@ -69,6 +74,8 @@ test.describe('Roadmap rapide — happy path (US22.3.1)', () => {
         revision: 1,
       });
     });
+
+    await stubEmptyMilestones(page);
 
     await page.goto(TENANT_PATH);
 
@@ -136,9 +143,13 @@ test.describe('Roadmap rapide — error cases (US22.3.1)', () => {
   });
 });
 
-async function stubRoadmap(page: Page, data: { lanes: LaneDto[]; initiatives: unknown[] }): Promise<void> {
+async function stubRoadmap(
+  page: Page,
+  data: { lanes: LaneDto[]; initiatives: unknown[]; milestones?: unknown[] },
+): Promise<void> {
   await page.route(`${API_BASE}/lanes`, route => fulfillJson(route, 200, data.lanes));
   await page.route(`${API_BASE}/initiatives`, route => fulfillJson(route, 200, data.initiatives));
+  await page.route(`${API_BASE}/milestones`, route => fulfillJson(route, 200, data.milestones ?? []));
 }
 
 test.describe('Échelle de temps floue (US22.3.2)', () => {
@@ -203,5 +214,116 @@ test.describe('Échelle de temps floue (US22.3.2)', () => {
     await expect(bar).toBeVisible();
     await expect(page.getByRole('alert')).toHaveCount(0);
     expect(updatePlacementCalls).toBe(0);
+  });
+});
+
+test.describe('Jalons stratégiques (US22.3.4)', () => {
+  test('creates a cross-project milestone (no lane) and moves it with the keyboard', async ({ page }) => {
+    let milestones: unknown[] = [];
+
+    await stubRoadmap(page, { lanes: [{ id: 10, name: 'Thème A', position: 0 }], initiatives: [] });
+    await page.route(`${API_BASE}/milestones`, async route => {
+      if (route.request().method() === 'GET') {
+        await fulfillJson(route, 200, milestones);
+        return;
+      }
+      const body = route.request().postDataJSON() as { name: string; date: string; laneId?: number };
+      const created = {
+        id: 200,
+        laneId: body.laneId ?? null,
+        name: body.name,
+        date: body.date,
+        temporalPrecision: 'DAY',
+        revision: 0,
+      };
+      milestones = [...milestones, created];
+      await fulfillJson(route, 201, created);
+    });
+    await page.route(`${API_BASE}/milestones/200`, async route => {
+      await fulfillJson(route, 200, {
+        id: 200,
+        laneId: null,
+        name: 'Go/No-Go',
+        date: '2026-04-01',
+        temporalPrecision: 'DAY',
+        revision: 1,
+      });
+    });
+
+    await page.goto(TENANT_PATH);
+
+    // AC1 — create a strategic milestone, visible on the roadmap without needing a lane.
+    await page.getByLabel('Nom du jalon').fill('Go/No-Go');
+    await page.getByLabel('Date', { exact: true }).fill('2026-06-01');
+    await page.getByRole('button', { name: 'Créer le jalon' }).click();
+
+    const marker = page.getByRole('button', { name: /Jalon Go\/No-Go/ });
+    await expect(marker).toBeVisible();
+
+    // AC2 + A11y AC — move it with the keyboard, no mouse involved; the date change is written
+    // through the same PATCH a future Gantt view would use (single source of truth, EN22.1).
+    await marker.focus();
+    await page.keyboard.press('ArrowRight');
+
+    await expect(page.getByRole('alert')).toHaveCount(0);
+  });
+
+  test('Error AC: rejects creating a milestone with no date, with an explicit message (MILESTONE_DATE_REQUIRED)', async ({
+    page,
+  }) => {
+    await stubRoadmap(page, { lanes: [{ id: 10, name: 'Thème A', position: 0 }], initiatives: [] });
+
+    await page.goto(TENANT_PATH);
+
+    await page.getByLabel('Nom du jalon').fill('Jalon sans date');
+    await page.getByRole('button', { name: 'Créer le jalon' }).click();
+
+    await expect(page.getByRole('alert')).toContainText('Une date est requise pour créer un jalon.');
+  });
+
+  test('Error AC: surfaces MILESTONE_DATE_OUT_OF_BOUNDS when the backend rejects the date', async ({ page }) => {
+    await stubRoadmap(page, { lanes: [], initiatives: [] });
+    await page.route(`${API_BASE}/milestones`, async route => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ code: 'MILESTONE_DATE_OUT_OF_BOUNDS', message: 'out of bounds' }),
+        });
+        return;
+      }
+      await fulfillJson(route, 200, []);
+    });
+
+    await page.goto(TENANT_PATH);
+
+    await page.getByLabel('Nom du jalon').fill('Jalon hors bornes');
+    await page.getByLabel('Date', { exact: true }).fill('1999-01-01');
+    await page.getByRole('button', { name: 'Créer le jalon' }).click();
+
+    await expect(page.getByRole('alert')).toContainText("Cette date est en dehors des bornes planifiées du projet.");
+  });
+
+  test('Security AC: surfaces a permission error when the backend denies the milestone write (403)', async ({
+    page,
+  }) => {
+    await stubRoadmap(page, { lanes: [], initiatives: [] });
+    await page.route(`${API_BASE}/milestones`, async route => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({ status: 403 });
+      } else {
+        await fulfillJson(route, 200, []);
+      }
+    });
+
+    await page.goto(TENANT_PATH);
+
+    await page.getByLabel('Nom du jalon').fill('Go/No-Go');
+    await page.getByLabel('Date', { exact: true }).fill('2026-06-01');
+    await page.getByRole('button', { name: 'Créer le jalon' }).click();
+
+    await expect(page.getByRole('alert')).toContainText(
+      "Vous n'avez pas les droits pour créer un jalon sur ce projet.",
+    );
   });
 });
