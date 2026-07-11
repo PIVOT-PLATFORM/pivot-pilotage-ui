@@ -1,0 +1,55 @@
+{
+  "roadmap": {
+    "board": {
+      "title": "Quick roadmap",
+      "loading": "Loading the roadmap…",
+      "retry": "Retry",
+      "noLanes": "No lanes yet — create one to start posing initiatives.",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "This project could not be found, or you don't have access to it.",
+          "GENERIC": "Could not load the roadmap."
+        }
+      },
+      "createLane": {
+        "nameLabel": "Lane name (theme, team, objective…)",
+        "submit": "Create lane",
+        "errors": {
+          "NAME_REQUIRED": "The lane name is required.",
+          "INVALID_NAME": "The lane name is invalid.",
+          "LANE_DUPLICATE": "A lane already uses this name on this project.",
+          "FORBIDDEN": "You don't have permission to create a lane on this project.",
+          "NOT_FOUND": "This project could not be found, or you don't have access to it.",
+          "GENERIC": "Could not create the lane."
+        }
+      },
+      "createInitiative": {
+        "nameLabel": "Initiative name",
+        "laneLabel": "Lane",
+        "lanePlaceholder": "Choose a lane…",
+        "submit": "Create initiative",
+        "errors": {
+          "NAME_REQUIRED": "The initiative name is required.",
+          "LANE_REQUIRED": "A lane is required to create an initiative.",
+          "LANE_NOT_FOUND": "This lane does not exist, or does not belong to this project.",
+          "INVALID_PERIOD": "The supplied period is invalid.",
+          "FORBIDDEN": "You don't have permission to create an initiative on this project.",
+          "NOT_FOUND": "This project could not be found, or you don't have access to it.",
+          "GENERIC": "Could not create the initiative."
+        }
+      },
+      "placement": {
+        "errors": {
+          "LANE_NOT_FOUND": "This lane does not exist, or does not belong to this project.",
+          "INVALID_PERIOD": "The supplied period is invalid.",
+          "FORBIDDEN": "You don't have permission to move this initiative.",
+          "NOT_FOUND": "This project or initiative could not be found.",
+          "GENERIC": "Could not update the initiative."
+        }
+      },
+      "bar": {
+        "ariaLabel": "Initiative {{name}}, {{period}}. Arrow keys to move, Shift+arrow to resize, up/down to change lane."
+      }
+    }
+  }
+}
