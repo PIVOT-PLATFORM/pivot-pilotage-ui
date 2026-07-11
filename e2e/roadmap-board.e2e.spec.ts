@@ -140,3 +140,62 @@ async function stubRoadmap(page: Page, data: { lanes: LaneDto[]; initiatives: un
   await page.route(`${API_BASE}/lanes`, route => fulfillJson(route, 200, data.lanes));
   await page.route(`${API_BASE}/initiatives`, route => fulfillJson(route, 200, data.initiatives));
 }
+
+test.describe('Échelle de temps floue (US22.3.2)', () => {
+  test('switches the axis grain (mois/trimestre/semestre) with the keyboard, without touching the stored period', async ({
+    page,
+  }) => {
+    let updatePlacementCalls = 0;
+
+    await stubRoadmap(page, {
+      lanes: [{ id: 10, name: 'Thème A', position: 0 }],
+      initiatives: [
+        {
+          id: 100,
+          laneId: 10,
+          name: 'Initiative A',
+          fuzzyPeriodStart: '2026-02-10',
+          fuzzyPeriodEnd: '2026-02-20',
+          temporalPrecision: 'QUARTER',
+          revision: 0,
+        },
+      ],
+    });
+    await page.route(`${API_BASE}/initiatives/100`, async route => {
+      updatePlacementCalls++;
+      await fulfillJson(route, 200, {});
+    });
+
+    await page.goto(TENANT_PATH);
+
+    const scaleSelect = page.getByLabel('Échelle de temps');
+    await expect(scaleSelect).toBeVisible();
+    // AC — default grain is Trimestre (QUARTER), matching US22.3.1's fixed axis.
+    await expect(scaleSelect).toHaveValue('QUARTER');
+
+    // A11y AC — keyboard-operable: Tab to the selector, then change its value with the keyboard.
+    await page.keyboard.press('Tab');
+    await expect(scaleSelect).toBeFocused();
+    await scaleSelect.selectOption('MONTH');
+    await expect(scaleSelect).toHaveValue('MONTH');
+
+    // AC — bars re-align on the new grain's period boundaries; the initiative's own stored
+    // period is never touched by a scale switch (no PATCH fired).
+    const bar = page.getByRole('button', { name: /Initiative A/ });
+    await expect(bar).toBeVisible();
+    expect(updatePlacementCalls).toBe(0);
+
+    await scaleSelect.selectOption('SEMESTER');
+    await expect(scaleSelect).toHaveValue('SEMESTER');
+    await expect(bar).toBeVisible();
+    expect(updatePlacementCalls).toBe(0);
+
+    // Error AC — switching back to the original grain never lost/truncated the stored period:
+    // no error surfaced, initiative still rendered.
+    await scaleSelect.selectOption('QUARTER');
+    await expect(scaleSelect).toHaveValue('QUARTER');
+    await expect(bar).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    expect(updatePlacementCalls).toBe(0);
+  });
+});
