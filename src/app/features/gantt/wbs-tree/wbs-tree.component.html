@@ -36,7 +36,7 @@
               <span class="wbs-tree__readonly-badge">{{ 'gantt.wbsTree.readOnlyBadge' | transloco }}</span>
             }
 
-            <span class="wbs-tree__dates">{{ formatWbsDate(node.startDate) }} → {{ formatWbsDate(node.finishDate) }}</span>
+            <span class="wbs-tree__dates">{{ dateRangeLabel(node) }}</span>
 
             @if (node.progressLabel) {
               <span class="wbs-tree__progress">

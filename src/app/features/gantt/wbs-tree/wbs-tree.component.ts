@@ -144,8 +144,16 @@ export class WbsTreeComponent implements OnInit {
   }
 
   /** Formats a WBS date (ISO instant) as a plain `yyyy-MM-dd` — the time-of-day component carries no meaning for this altitude (day-grained WBS tasks, see `WbsTaskService`'s `DEFAULT_PRECISION`). */
-  protected formatWbsDate(iso: string | null): string {
+  private formatWbsDate(iso: string | null): string {
     return iso ? iso.slice(0, 10) : this.transloco.translate('gantt.wbsTree.noDate');
+  }
+
+  /** Full start→finish label for a node — the separator lives in the translation catalogue (`gantt.wbsTree.dateRange`), never hardcoded in the template, so it stays localizable (CLAUDE.md i18n rule: no literal string in a template). */
+  protected dateRangeLabel(node: WbsTaskResponse): string {
+    return this.transloco.translate('gantt.wbsTree.dateRange', {
+      start: this.formatWbsDate(node.startDate),
+      finish: this.formatWbsDate(node.finishDate),
+    });
   }
 
   protected nodeKindLabelKey(node: WbsTaskResponse): string {

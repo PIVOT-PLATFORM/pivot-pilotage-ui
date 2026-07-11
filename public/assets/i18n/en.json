@@ -288,6 +288,7 @@
       "retry": "Retry",
       "empty": "No tasks yet in this project's work breakdown structure.",
       "noDate": "—",
+      "dateRange": "{{start}} → {{finish}}",
       "load": {
         "errors": {
           "NOT_FOUND": "This project could not be found, or you don't have access to it.",

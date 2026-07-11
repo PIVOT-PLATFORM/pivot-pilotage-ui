@@ -288,6 +288,7 @@
       "retry": "Réessayer",
       "empty": "Aucune tâche pour l'instant dans la structure de découpage de ce projet.",
       "noDate": "—",
+      "dateRange": "{{start}} → {{finish}}",
       "load": {
         "errors": {
           "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",

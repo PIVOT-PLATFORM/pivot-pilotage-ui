@@ -197,8 +197,11 @@ describe('WbsTreeComponent', () => {
       expect(summaryRow.classList.contains('wbs-tree__item--summary')).toBe(true);
       expect(summaryRow.textContent).toContain('gantt.wbsTree.readOnlyBadge');
       expect(summaryRow.textContent).toContain('45%');
-      expect(summaryRow.textContent).toContain('2026-01-01');
-      expect(summaryRow.textContent).toContain('2026-03-01');
+      // The start/finish dates are rendered through the `gantt.wbsTree.dateRange` translation key
+      // (never a hardcoded separator in the template) — TranslocoTestingModule's stub here doesn't
+      // interpolate, so the raw key is what's asserted (same established pattern as
+      // `roadmap-board.component.spec.ts`'s own equivalent comment).
+      expect(summaryRow.textContent).toContain('gantt.wbsTree.dateRange');
     });
 
     it('never renders a progress label for an untracked leaf (progressLabel null)', () => {
@@ -241,6 +244,18 @@ describe('WbsTreeComponent', () => {
       expect(api.indent).toHaveBeenCalledWith(REF, 102);
       expect(api.tree).toHaveBeenCalledTimes(2); // initial load + re-fetch after the action
       expect(text(fixture)).not.toContain('gantt.wbsTree.actions.errors');
+    });
+
+    it('A11y — focus stays on the acted-upon row after a successful structural action (roving tabindex re-focused post-refetch)', () => {
+      const reindented: WbsTaskResponse = { ...LEAF_2, ariaLevel: 3, wbsCode: '1.1.1' };
+      const api = makeApiMock({ indent: vi.fn(() => of(reindented)) });
+      const fixture = createFixture(api);
+
+      const actedRow = rowByTaskId(fixture, 102);
+      actionButton(actedRow, 'indent').click();
+      fixture.detectChanges();
+
+      expect(document.activeElement).toBe(rowByTaskId(fixture, 102));
     });
 
     it('AC — clicking Outdent calls the outdent endpoint', () => {
