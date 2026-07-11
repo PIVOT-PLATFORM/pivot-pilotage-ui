@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { HttpErrorResponse } from '@angular/common/http';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { RoadmapApiService } from './roadmap-api.service';
-import { Initiative, Lane, Milestone, RoadmapApiError, RoadmapProjectRef } from './roadmap.models';
+import { HorizonViewResponse, Initiative, Lane, Milestone, RoadmapApiError, RoadmapProjectRef } from './roadmap.models';
 import { environment } from '../../../../environments/environment';
 
 const REF: RoadmapProjectRef = { tenantId: 1, teamId: 2, projectId: 3 };
@@ -19,6 +19,7 @@ const INITIATIVE: Initiative = {
   fuzzyPeriodEnd: null,
   temporalPrecision: 'QUARTER',
   revision: 0,
+  horizon: 'NOW',
 };
 const MILESTONE: Milestone = {
   id: 200,
@@ -408,6 +409,78 @@ describe('RoadmapApiService', () => {
       service.updateMilestone(REF, 200, { date: '2026-07-01' }).subscribe({ error: e => (error = e) });
 
       httpMock.expectOne(`${BASE}/milestones/200`).flush(null, { status: 404, statusText: 'Not Found' });
+
+      expect(error?.status).toBe(404);
+    });
+  });
+
+  describe('getHorizonView (US22.3.3 — Vue Now/Next/Later)', () => {
+    it('GETs the project initiatives grouped by Now/Next/Later bucket, plus the untriaged ones', () => {
+      const view: HorizonViewResponse = {
+        buckets: [
+          { horizon: 'NOW', initiatives: [INITIATIVE] },
+          { horizon: 'NEXT', initiatives: [] },
+          { horizon: 'LATER', initiatives: [] },
+        ],
+        unbucketed: [],
+      };
+      let result: HorizonViewResponse | undefined;
+      service.getHorizonView(REF).subscribe(v => (result = v));
+
+      const req = httpMock.expectOne(`${BASE}/horizon-view`);
+      expect(req.request.method).toBe('GET');
+      req.flush(view);
+
+      expect(result).toEqual(view);
+    });
+
+    it('propagates 404 when the tenant/team/project triplet resolves to no visible project', () => {
+      let error: HttpErrorResponse | undefined;
+      service.getHorizonView(REF).subscribe({ error: e => (error = e) });
+
+      httpMock.expectOne(`${BASE}/horizon-view`).flush(null, { status: 404, statusText: 'Not Found' });
+
+      expect(error?.status).toBe(404);
+    });
+  });
+
+  describe('updateHorizon (US22.3.3 — Vue Now/Next/Later)', () => {
+    it('PATCHes the mandatory horizon and returns the updated initiative', () => {
+      let result: Initiative | undefined;
+      service.updateHorizon(REF, 100, { horizon: 'NEXT' }).subscribe(v => (result = v));
+
+      const req = httpMock.expectOne(`${BASE}/initiatives/100/horizon`);
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({ horizon: 'NEXT' });
+      req.flush({ ...INITIATIVE, horizon: 'NEXT' });
+
+      expect(result?.horizon).toBe('NEXT');
+    });
+
+    it('propagates 400 when horizon is null/absent (never sent by this service\'s own callers)', () => {
+      let error: HttpErrorResponse | undefined;
+      service.updateHorizon(REF, 100, { horizon: 'NEXT' }).subscribe({ error: e => (error = e) });
+
+      const body: RoadmapApiError = { code: 'HORIZON_REQUIRED', message: 'horizon is required' };
+      httpMock.expectOne(`${BASE}/initiatives/100/horizon`).flush(body, { status: 400, statusText: 'Bad Request' });
+
+      expect(error?.status).toBe(400);
+    });
+
+    it('propagates a bodyless 403 when the write is unauthorized (fail-closed today)', () => {
+      let error: HttpErrorResponse | undefined;
+      service.updateHorizon(REF, 100, { horizon: 'LATER' }).subscribe({ error: e => (error = e) });
+
+      httpMock.expectOne(`${BASE}/initiatives/100/horizon`).flush(null, { status: 403, statusText: 'Forbidden' });
+
+      expect(error?.status).toBe(403);
+    });
+
+    it('propagates a bodyless 404 when the project or the initiative is not visible', () => {
+      let error: HttpErrorResponse | undefined;
+      service.updateHorizon(REF, 100, { horizon: 'LATER' }).subscribe({ error: e => (error = e) });
+
+      httpMock.expectOne(`${BASE}/initiatives/100/horizon`).flush(null, { status: 404, statusText: 'Not Found' });
 
       expect(error?.status).toBe(404);
     });

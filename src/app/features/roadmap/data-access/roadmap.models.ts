@@ -14,6 +14,15 @@
 /** Effective temporal precision (altitude) of an initiative — mirrors the backend's `TemporalPrecision` enum (EN22.1a). */
 export type TemporalPrecision = 'SEMESTER' | 'QUARTER' | 'MONTH' | 'WEEK' | 'DAY';
 
+/**
+ * Now/Next/Later bucket (US22.3.3 — "Vue Now/Next/Later") — mirrors the backend's `Horizon` enum
+ * (`pivot-pilotage-core#39`). An attribute of an `Initiative`, never a separate structure — same
+ * "modèle temporel unique" (EN22.1) principle already established for `fuzzyPeriodStart`/`End`
+ * (US22.3.1) and `Milestone.date` (US22.3.4): the Now/Next/Later board is a pure alternative
+ * *rendering* of the same initiatives, not a second dataset to keep in sync.
+ */
+export type Horizon = 'NOW' | 'NEXT' | 'LATER';
+
 /** A lane — mirrors `LaneResponse{id, name, position}`. */
 export interface Lane {
   readonly id: number;
@@ -33,6 +42,13 @@ export interface Initiative {
   readonly temporalPrecision: TemporalPrecision;
   /** Monotonic revision counter (optimistic co-editing lock) — not enforced client-side yet. */
   readonly revision: number;
+  /**
+   * Now/Next/Later bucket (US22.3.3) — `null` for an initiative never explicitly triaged (see
+   * `HorizonViewResponse.unbucketed`'s TSDoc for why this is never silently dropped). The backend
+   * defaults new initiatives to `NOW` when `horizon` is omitted on create, so `null` should only
+   * ever be observed on initiatives created before this US shipped.
+   */
+  readonly horizon: Horizon | null;
 }
 
 /** Body of `POST .../roadmap/lanes` — mirrors `CreateLaneRequest`. */
@@ -53,6 +69,8 @@ export interface CreateInitiativeRequest {
   readonly fuzzyPeriodStart?: string;
   readonly fuzzyPeriodEnd?: string;
   readonly temporalPrecision?: TemporalPrecision;
+  /** US22.3.3 — omitted means "let the server default to `NOW`" (see `Initiative.horizon`'s TSDoc); this form never sends an explicit value, the create form has no horizon picker (out of scope, see that US's backlog file "Hors périmètre"). */
+  readonly horizon?: Horizon;
 }
 
 /**
@@ -148,6 +166,53 @@ export interface InitiativePlacementChange {
   readonly laneId: number;
   readonly fuzzyPeriodStart: string;
   readonly fuzzyPeriodEnd: string;
+}
+
+/**
+ * One Now/Next/Later column's initiatives — mirrors `HorizonBucketResponse` (US22.3.3,
+ * `pivot-pilotage-core#39`).
+ */
+export interface HorizonBucketResponse {
+  readonly horizon: Horizon;
+  readonly initiatives: Initiative[];
+}
+
+/**
+ * Body of `GET .../roadmap/horizon-view` — mirrors `HorizonViewResponse`. `unbucketed` holds every
+ * initiative with `horizon: null` (see `Initiative.horizon`'s TSDoc) — **never dropped**: AC1
+ * requires the Now/Next/Later board to show "le même jeu d'initiatives que la vue temporelle",
+ * so an initiative that hasn't been triaged yet must still be visible somewhere on this board,
+ * just not inside a `NOW`/`NEXT`/`LATER` column (see `NowNextLaterBoardComponent`'s TSDoc for how
+ * it's rendered, and why it can only ever be a drag/keyboard-move *source*, never a drop target —
+ * `UpdateInitiativeHorizonRequest.horizon` is mandatory, there is no supported way to clear it
+ * back to `null` from this UI).
+ */
+export interface HorizonViewResponse {
+  readonly buckets: HorizonBucketResponse[];
+  readonly unbucketed: Initiative[];
+}
+
+/**
+ * Body of `PATCH .../roadmap/initiatives/{id}/horizon` — mirrors `UpdateInitiativeHorizonRequest`.
+ * Unlike {@link UpdateInitiativePlacementRequest}/{@link UpdateMilestoneRequest}, `horizon` is
+ * **mandatory** here (backend returns 400 if null/absent) — this single-field endpoint has no
+ * "leave unchanged" case to support.
+ */
+export interface UpdateInitiativeHorizonRequest {
+  readonly horizon: Horizon;
+}
+
+/**
+ * A fully-resolved new horizon for an initiative, emitted by `NowNextLaterBoardComponent` once a
+ * mouse drag/drop between columns is dropped or a keyboard move is applied (AC2 + A11y AC).
+ * Carries the full {@link Initiative} (not just its id) because — unlike
+ * `InitiativeBarComponent`/`MilestoneMarkerComponent`, which are rendered from a `RoadmapBoardComponent`-owned `@for` that already has the initiative in scope — the board here has no
+ * per-card loop variable of its own to bind against; `NowNextLaterBoardComponent` owns that
+ * iteration internally (one column per horizon, see its TSDoc).
+ */
+export interface InitiativeHorizonChange {
+  readonly initiative: Initiative;
+  readonly horizon: Horizon;
 }
 
 /**
