@@ -1,0 +1,133 @@
+<div class="cal-exc">
+  <h4 class="cal-exc__title">{{ 'calendar.exceptions.title' | transloco }}</h4>
+
+  <form class="cal-exc__add-form" (submit)="$event.preventDefault(); submitAdd()">
+    <div class="cal-exc__field">
+      <label for="cal-exc-start">{{ 'calendar.exceptions.add.startDateLabel' | transloco }}</label>
+      <input
+        id="cal-exc-start"
+        type="date"
+        [value]="startDateInput()"
+        (input)="onStartDateInput($event)"
+        [attr.aria-invalid]="addErrorKey() ? true : null"
+        [attr.aria-describedby]="addErrorKey() ? 'cal-exc-add-error' : null"
+      />
+    </div>
+
+    <div class="cal-exc__field">
+      <label for="cal-exc-end">{{ 'calendar.exceptions.add.endDateLabel' | transloco }}</label>
+      <input
+        id="cal-exc-end"
+        type="date"
+        [value]="endDateInput()"
+        (input)="onEndDateInput($event)"
+        [attr.aria-invalid]="addErrorKey() ? true : null"
+        [attr.aria-describedby]="addErrorKey() ? 'cal-exc-add-error' : null"
+      />
+    </div>
+
+    <fieldset class="cal-exc__type">
+      <legend>{{ 'calendar.exceptions.add.typeLabel' | transloco }}</legend>
+      <label>
+        <input type="radio" name="cal-exc-working" value="false" [checked]="!working()" (change)="onWorkingChange($event)" />
+        {{ 'calendar.exceptions.add.type.off' | transloco }}
+      </label>
+      <label>
+        <input type="radio" name="cal-exc-working" value="true" [checked]="working()" (change)="onWorkingChange($event)" />
+        {{ 'calendar.exceptions.add.type.working' | transloco }}
+      </label>
+    </fieldset>
+
+    @if (working()) {
+      <fieldset class="cal-exc__ranges">
+        <legend>{{ 'calendar.exceptions.add.rangesLabel' | transloco }}</legend>
+        @for (range of ranges(); track $index) {
+          <div class="cal-exc__range-row">
+            <label [for]="'cal-exc-range-start-' + $index">{{ 'calendar.manager.range.startLabel' | transloco }}</label>
+            <input
+              [id]="'cal-exc-range-start-' + $index"
+              type="number"
+              min="0"
+              max="23"
+              [value]="range.startHour"
+              (input)="updateRange($index, 'startHour', $event)"
+            />
+            <label [for]="'cal-exc-range-end-' + $index">{{ 'calendar.manager.range.endLabel' | transloco }}</label>
+            <input
+              [id]="'cal-exc-range-end-' + $index"
+              type="number"
+              min="1"
+              max="24"
+              [value]="range.endHour"
+              (input)="updateRange($index, 'endHour', $event)"
+            />
+            <button type="button" (click)="removeRange($index)">{{ 'calendar.manager.range.remove' | transloco }}</button>
+          </div>
+        }
+        <button type="button" (click)="addRange()">{{ 'calendar.exceptions.add.addRange' | transloco }}</button>
+      </fieldset>
+    }
+
+    <button type="submit" [disabled]="adding()">{{ 'calendar.exceptions.add.submit' | transloco }}</button>
+    @if (addErrorKey()) {
+      <p id="cal-exc-add-error" class="cal-exc__error" role="alert">{{ addErrorKey()! | transloco }}</p>
+    }
+  </form>
+
+  @if (loading()) {
+    <p class="cal-exc__status" role="status">{{ 'calendar.exceptions.list.loading' | transloco }}</p>
+  } @else if (loadErrorKey()) {
+    <div class="cal-exc__status cal-exc__status--error" role="alert">
+      <p>{{ loadErrorKey()! | transloco }}</p>
+      <button type="button" (click)="retryLoad()">{{ 'calendar.exceptions.list.retry' | transloco }}</button>
+    </div>
+  } @else if (exceptions().length === 0) {
+    <p class="cal-exc__empty">{{ 'calendar.exceptions.list.empty' | transloco }}</p>
+  } @else {
+    <table class="cal-exc__table">
+      <thead>
+        <tr>
+          <th scope="col">{{ 'calendar.exceptions.list.columns.date' | transloco }}</th>
+          <th scope="col">{{ 'calendar.exceptions.list.columns.type' | transloco }}</th>
+          <th scope="col">{{ 'calendar.exceptions.list.columns.ranges' | transloco }}</th>
+          <th scope="col">{{ 'calendar.exceptions.list.columns.actions' | transloco }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (exception of exceptions(); track exception.exceptionId) {
+          <tr>
+            <td>{{ exception.exceptionDate }}</td>
+            <td>
+              @if (exception.working) {
+                {{ 'calendar.exceptions.list.type.working' | transloco }}
+              } @else {
+                {{ 'calendar.exceptions.list.type.off' | transloco }}
+              }
+            </td>
+            <td>
+              @for (range of exception.ranges; track $index) {
+                <span class="cal-exc__range-chip">{{ formatHour(range.startHour) }}–{{ formatHour(range.endHour) }}</span>
+              }
+            </td>
+            <td>
+              @if (confirmingRemoveId() === exception.exceptionId) {
+                <span>{{ 'calendar.exceptions.remove.confirmPrompt' | transloco }}</span>
+                <button type="button" (click)="confirmRemove(exception.exceptionId)">
+                  {{ 'calendar.exceptions.remove.confirmButton' | transloco }}
+                </button>
+                <button type="button" (click)="cancelRemove()">{{ 'calendar.exceptions.remove.cancelButton' | transloco }}</button>
+              } @else {
+                <button type="button" (click)="requestRemove(exception.exceptionId)">
+                  {{ 'calendar.exceptions.remove.button' | transloco }}
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (removeErrorKey()) {
+      <p class="cal-exc__error" role="alert">{{ removeErrorKey()! | transloco }}</p>
+    }
+  }
+</div>
