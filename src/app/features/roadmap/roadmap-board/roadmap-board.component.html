@@ -56,7 +56,43 @@
       }
     </form>
 
-    @if (lanes().length === 0) {
+    <form class="rm-board__form" (submit)="$event.preventDefault(); submitCreateMilestone()">
+      <label for="rm-new-milestone-name">{{ 'roadmap.board.createMilestone.nameLabel' | transloco }}</label>
+      <input
+        id="rm-new-milestone-name"
+        type="text"
+        [value]="newMilestoneName()"
+        (input)="onMilestoneNameInput($event)"
+        [attr.aria-invalid]="createMilestoneErrorKey() ? true : null"
+        [attr.aria-describedby]="createMilestoneErrorKey() ? 'rm-new-milestone-error' : null"
+      />
+      <label for="rm-new-milestone-date">{{ 'roadmap.board.createMilestone.dateLabel' | transloco }}</label>
+      <input
+        id="rm-new-milestone-date"
+        type="date"
+        [value]="newMilestoneDate()"
+        (input)="onMilestoneDateInput($event)"
+        [attr.aria-invalid]="createMilestoneErrorKey() ? true : null"
+        [attr.aria-describedby]="createMilestoneErrorKey() ? 'rm-new-milestone-error' : null"
+      />
+      <label for="rm-new-milestone-lane">{{ 'roadmap.board.createMilestone.laneLabel' | transloco }}</label>
+      <select id="rm-new-milestone-lane" (change)="onMilestoneLaneChange($event)">
+        <option value="">{{ 'roadmap.board.createMilestone.lanePlaceholder' | transloco }}</option>
+        @for (lane of lanes(); track lane.id) {
+          <option [value]="lane.id">{{ lane.name }}</option>
+        }
+      </select>
+      <button type="submit" [disabled]="creatingMilestone()">
+        {{ 'roadmap.board.createMilestone.submit' | transloco }}
+      </button>
+      @if (createMilestoneErrorKey()) {
+        <p id="rm-new-milestone-error" class="rm-board__error" role="alert">
+          {{ createMilestoneErrorKey()! | transloco }}
+        </p>
+      }
+    </form>
+
+    @if (lanes().length === 0 && milestones().length === 0) {
       <p class="rm-board__empty">{{ 'roadmap.board.noLanes' | transloco }}</p>
     } @else {
       <div class="rm-board__scale">
@@ -75,35 +111,62 @@
           }
         </div>
 
-        <div class="rm-board__lanes">
-          @for (lane of lanes(); track lane.id) {
-            <div class="rm-lane">
-              <div class="rm-lane__label" [style.width.px]="laneLabelWidthPx">{{ lane.name }}</div>
-              <div
-                class="rm-lane__track"
-                [style.width.px]="axisWidthPx()"
-                [style.background-size]="periodWidthPx() + 'px 100%'"
-              ></div>
-            </div>
-          }
-        </div>
-
-        <div class="rm-board__bars" [style.left.px]="laneLabelWidthPx">
-          @for (initiative of initiatives(); track initiative.id) {
-            <app-initiative-bar
-              [initiative]="initiative"
+        <!-- US22.3.4 — own row, distinct from the per-lane bars overlay below: a milestone is
+             punctual and may have no laneId at all (see class TSDoc). -->
+        <div
+          class="rm-board__milestones-row"
+          [style.margin-left.px]="laneLabelWidthPx"
+          role="group"
+          [attr.aria-label]="'roadmap.board.milestones.rowLabel' | transloco"
+        >
+          @for (milestone of milestones(); track milestone.id) {
+            <app-milestone-marker
+              [milestone]="milestone"
               [periods]="periods()"
               [periodWidthPx]="periodWidthPx()"
-              [laneIds]="laneIds()"
-              (placementChange)="onPlacementChange(initiative, $event)"
+              [laneName]="laneNameFor(milestone.laneId)"
+              (dateChange)="onMilestoneDateChange(milestone, $event)"
             />
           }
         </div>
+
+        @if (lanes().length === 0) {
+          <p class="rm-board__empty">{{ 'roadmap.board.noLanes' | transloco }}</p>
+        } @else {
+          <div class="rm-board__lanes">
+            @for (lane of lanes(); track lane.id) {
+              <div class="rm-lane">
+                <div class="rm-lane__label" [style.width.px]="laneLabelWidthPx">{{ lane.name }}</div>
+                <div
+                  class="rm-lane__track"
+                  [style.width.px]="axisWidthPx()"
+                  [style.background-size]="periodWidthPx() + 'px 100%'"
+                ></div>
+              </div>
+            }
+          </div>
+
+          <div class="rm-board__bars" [style.left.px]="laneLabelWidthPx">
+            @for (initiative of initiatives(); track initiative.id) {
+              <app-initiative-bar
+                [initiative]="initiative"
+                [periods]="periods()"
+                [periodWidthPx]="periodWidthPx()"
+                [laneIds]="laneIds()"
+                (placementChange)="onPlacementChange(initiative, $event)"
+              />
+            }
+          </div>
+        }
       </div>
     }
 
     @if (placementErrorKey()) {
       <p class="rm-board__error" role="alert">{{ placementErrorKey()! | transloco }}</p>
+    }
+
+    @if (milestoneDateErrorKey()) {
+      <p class="rm-board__error" role="alert">{{ milestoneDateErrorKey()! | transloco }}</p>
     }
 
     <p class="rm-sr-only" aria-live="polite">{{ announcement() }}</p>

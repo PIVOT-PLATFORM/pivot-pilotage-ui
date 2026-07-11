@@ -59,6 +59,40 @@
         "ariaLabel": "Initiative {{name}}, {{period}}. Arrow keys to move, Shift+arrow to resize, up/down to change lane.",
         "announceMoved": "{{name}} moved: {{start}} → {{end}}.",
         "announceReverted": "{{name}}: move reverted, an error occurred."
+      },
+      "milestones": {
+        "rowLabel": "Strategic milestones",
+        "marker": {
+          "ariaLabel": "Milestone {{name}}, {{period}}. Arrow keys to move.",
+          "ariaLabelWithLane": "Milestone {{name}}, {{period}}, lane {{lane}}. Arrow keys to move.",
+          "announceMoved": "{{name}} moved to {{date}}.",
+          "announceReverted": "{{name}}: move reverted, an error occurred."
+        }
+      },
+      "createMilestone": {
+        "nameLabel": "Milestone name",
+        "dateLabel": "Date",
+        "laneLabel": "Lane (optional)",
+        "lanePlaceholder": "No lane (cross-project)",
+        "submit": "Create milestone",
+        "errors": {
+          "NAME_REQUIRED": "The milestone name is required.",
+          "MILESTONE_DATE_REQUIRED": "A date is required to create a milestone.",
+          "MILESTONE_DATE_OUT_OF_BOUNDS": "This date is outside the project's planned bounds.",
+          "LANE_NOT_FOUND": "This lane does not exist, or does not belong to this project.",
+          "FORBIDDEN": "You don't have permission to create a milestone on this project.",
+          "NOT_FOUND": "This project could not be found, or you don't have access to it.",
+          "GENERIC": "Could not create the milestone."
+        }
+      },
+      "milestoneDate": {
+        "errors": {
+          "MILESTONE_DATE_OUT_OF_BOUNDS": "This date is outside the project's planned bounds.",
+          "LANE_NOT_FOUND": "This lane does not exist, or does not belong to this project.",
+          "FORBIDDEN": "You don't have permission to move this milestone.",
+          "NOT_FOUND": "This project or milestone could not be found.",
+          "GENERIC": "Could not update the milestone."
+        }
       }
     }
   }

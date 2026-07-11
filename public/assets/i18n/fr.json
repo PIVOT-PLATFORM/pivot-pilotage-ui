@@ -59,6 +59,40 @@
         "ariaLabel": "Initiative {{name}}, {{period}}. Flèches pour déplacer, Maj + flèches pour redimensionner, haut/bas pour changer de lane.",
         "announceMoved": "{{name}} déplacée : {{start}} → {{end}}.",
         "announceReverted": "{{name}} : déplacement annulé, une erreur est survenue."
+      },
+      "milestones": {
+        "rowLabel": "Jalons stratégiques",
+        "marker": {
+          "ariaLabel": "Jalon {{name}}, {{period}}. Flèches pour déplacer.",
+          "ariaLabelWithLane": "Jalon {{name}}, {{period}}, lane {{lane}}. Flèches pour déplacer.",
+          "announceMoved": "{{name}} déplacé au {{date}}.",
+          "announceReverted": "{{name}} : déplacement annulé, une erreur est survenue."
+        }
+      },
+      "createMilestone": {
+        "nameLabel": "Nom du jalon",
+        "dateLabel": "Date",
+        "laneLabel": "Lane (optionnel)",
+        "lanePlaceholder": "Aucune lane (transverse au projet)",
+        "submit": "Créer le jalon",
+        "errors": {
+          "NAME_REQUIRED": "Le nom du jalon est requis.",
+          "MILESTONE_DATE_REQUIRED": "Une date est requise pour créer un jalon.",
+          "MILESTONE_DATE_OUT_OF_BOUNDS": "Cette date est en dehors des bornes planifiées du projet.",
+          "LANE_NOT_FOUND": "Cette lane n'existe pas ou n'appartient pas à ce projet.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour créer un jalon sur ce projet.",
+          "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de créer le jalon."
+        }
+      },
+      "milestoneDate": {
+        "errors": {
+          "MILESTONE_DATE_OUT_OF_BOUNDS": "Cette date est en dehors des bornes planifiées du projet.",
+          "LANE_NOT_FOUND": "Cette lane n'existe pas ou n'appartient pas à ce projet.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour déplacer ce jalon.",
+          "NOT_FOUND": "Ce projet ou ce jalon est introuvable.",
+          "GENERIC": "Impossible de mettre à jour le jalon."
+        }
       }
     }
   }
