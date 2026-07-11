@@ -1,0 +1,81 @@
+@if (loading()) {
+  <p class="wbs-tree__status" role="status">{{ 'gantt.wbsTree.loading' | transloco }}</p>
+} @else if (loadErrorKey()) {
+  <div class="wbs-tree__status wbs-tree__status--error" role="alert">
+    <p>{{ loadErrorKey()! | transloco }}</p>
+    <button type="button" (click)="retryLoad()">{{ 'gantt.wbsTree.retry' | transloco }}</button>
+  </div>
+} @else {
+  <div class="wbs-tree">
+    <h1 class="wbs-tree__title">{{ 'gantt.wbsTree.title' | transloco }}</h1>
+
+    @if (nodes().length === 0) {
+      <p class="wbs-tree__empty">{{ 'gantt.wbsTree.empty' | transloco }}</p>
+    } @else {
+      <ul class="wbs-tree__list" role="tree" [attr.aria-label]="'gantt.wbsTree.ariaLabel' | transloco">
+        @for (node of nodes(); track node.taskId) {
+          <li
+            class="wbs-tree__item"
+            [class.wbs-tree__item--summary]="node.nodeKind === 'SUMMARY'"
+            role="treeitem"
+            [attr.data-task-id]="node.taskId"
+            [attr.aria-level]="node.ariaLevel"
+            [attr.aria-setsize]="node.ariaSetSize"
+            [attr.aria-posinset]="node.ariaPosInSet"
+            [attr.aria-readonly]="node.ariaReadOnly"
+            [style.padding-inline-start.px]="(node.ariaLevel - 1) * 20"
+            [tabindex]="focusedTaskId() === node.taskId ? 0 : -1"
+            (focus)="onRowFocus(node)"
+            (keydown)="onRowKeyDown($event, node)"
+          >
+            <span class="wbs-tree__code">{{ node.wbsCode }}</span>
+            <span class="wbs-tree__name">{{ node.name }}</span>
+            <span class="wbs-tree__kind">{{ nodeKindLabelKey(node) | transloco }}</span>
+
+            @if (node.readOnly) {
+              <span class="wbs-tree__readonly-badge">{{ 'gantt.wbsTree.readOnlyBadge' | transloco }}</span>
+            }
+
+            <span class="wbs-tree__dates">{{ formatWbsDate(node.startDate) }} → {{ formatWbsDate(node.finishDate) }}</span>
+
+            @if (node.progressLabel) {
+              <span class="wbs-tree__progress">
+                <span
+                  class="wbs-tree__progress-bar"
+                  aria-hidden="true"
+                  [style.width.%]="node.percentComplete ?? 0"
+                ></span>
+                <span class="wbs-tree__progress-label">{{ node.progressLabel }}</span>
+              </span>
+            }
+
+            <span
+              class="wbs-tree__actions"
+              role="group"
+              [attr.aria-label]="'gantt.wbsTree.actions.groupLabel' | transloco"
+            >
+              <button type="button" [disabled]="!canIndent(node)" (click)="onIndent(node)">
+                {{ 'gantt.wbsTree.actions.indent' | transloco }}
+              </button>
+              <button type="button" [disabled]="!canOutdent(node)" (click)="onOutdent(node)">
+                {{ 'gantt.wbsTree.actions.outdent' | transloco }}
+              </button>
+              <button type="button" [disabled]="!canMoveUp(node)" (click)="onMoveUp(node)">
+                {{ 'gantt.wbsTree.actions.moveUp' | transloco }}
+              </button>
+              <button type="button" [disabled]="!canMoveDown(node)" (click)="onMoveDown(node)">
+                {{ 'gantt.wbsTree.actions.moveDown' | transloco }}
+              </button>
+            </span>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (actionErrorKey()) {
+      <p class="wbs-tree__error" role="alert">{{ actionErrorKey()! | transloco }}</p>
+    }
+
+    <p class="wbs-tree__sr-only" aria-live="polite">{{ announcement() }}</p>
+  </div>
+}

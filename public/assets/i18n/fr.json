@@ -280,6 +280,43 @@
         },
         "announceDeleted": "Dépendance supprimée : {{predecessor}} → {{successor}}."
       }
+    },
+    "wbsTree": {
+      "title": "Structure de découpage (WBS)",
+      "ariaLabel": "Structure de découpage du projet",
+      "loading": "Chargement de la structure de découpage…",
+      "retry": "Réessayer",
+      "empty": "Aucune tâche pour l'instant dans la structure de découpage de ce projet.",
+      "noDate": "—",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de charger la structure de découpage."
+        }
+      },
+      "nodeKind": {
+        "SUMMARY": "Tâche récapitulative",
+        "LEAF": "Tâche",
+        "MILESTONE": "Jalon",
+        "RECURRING": "Tâche récurrente"
+      },
+      "readOnlyBadge": "Lecture seule — dérivé des sous-tâches",
+      "actions": {
+        "groupLabel": "Actions de structure",
+        "indent": "Abaisser (indent)",
+        "outdent": "Relever (outdent)",
+        "moveUp": "Monter",
+        "moveDown": "Descendre",
+        "announceLevelChanged": "{{name}} déplacée au niveau {{level}}.",
+        "announceReverted": "{{name}} : modification annulée, une erreur est survenue.",
+        "errors": {
+          "ILLEGAL_WBS_MOVE": "Ce déplacement n'est pas possible pour cette tâche.",
+          "WBS_HIERARCHY_CYCLE": "Ce déplacement créerait un cycle dans la hiérarchie du plan et a été rejeté.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour modifier la structure de ce projet.",
+          "NOT_FOUND": "Ce projet ou cette tâche est introuvable.",
+          "GENERIC": "Impossible de mettre à jour la structure du plan."
+        }
+      }
     }
   },
   "calendar": {
