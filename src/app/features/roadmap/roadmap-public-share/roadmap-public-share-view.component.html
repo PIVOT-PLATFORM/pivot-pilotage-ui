@@ -1,0 +1,60 @@
+@if (loading()) {
+  <p class="rm-public-share__status" role="status">{{ 'roadmap.publicShare.loading' | transloco }}</p>
+} @else if (errorKey()) {
+  <div class="rm-public-share__status rm-public-share__status--error" role="alert">
+    <h1>{{ 'roadmap.publicShare.errorTitle' | transloco }}</h1>
+    <p>{{ errorKey()! | transloco }}</p>
+  </div>
+} @else if (view(); as v) {
+  <div class="rm-public-share">
+    <h1 class="rm-public-share__title">{{ v.projectName }}</h1>
+    <p class="rm-public-share__badge" role="note">{{ 'roadmap.publicShare.readonlyNotice' | transloco }}</p>
+
+    <app-roadmap-export-button
+      [target]="captureAreaRef()?.nativeElement ?? null"
+      filenamePrefix="roadmap-partage"
+    />
+
+    @if (v.lanes.length === 0) {
+      <p class="rm-public-share__empty">{{ 'roadmap.publicShare.noLanes' | transloco }}</p>
+    } @else {
+      <div class="rm-board__timeline" #publicCaptureArea>
+        <div class="rm-board__periods" [style.margin-left.px]="laneLabelWidthPx">
+          @for (period of periods(); track period.index) {
+            <div class="rm-board__period-cell" [style.width.px]="periodWidthPx">{{ period.label }}</div>
+          }
+        </div>
+
+        <div class="rm-board__lanes">
+          @for (lane of v.lanes; track lane.id) {
+            <div class="rm-lane">
+              <div class="rm-lane__label" [style.width.px]="laneLabelWidthPx">{{ lane.name }}</div>
+              <div
+                class="rm-lane__track"
+                [style.width.px]="axisWidthPx()"
+                [style.background-size]="periodWidthPx + 'px 100%'"
+              ></div>
+            </div>
+          }
+        </div>
+
+        <div class="rm-board__bars" [style.left.px]="laneLabelWidthPx" role="list">
+          @for (initiative of v.initiatives; track initiative.id) {
+            <div
+              class="rm-bar rm-bar--readonly"
+              role="group"
+              [style.left.px]="barLeftPx(initiative)"
+              [style.width.px]="barWidthPx(initiative)"
+              [style.top.px]="barTopPx(initiative)"
+              [attr.aria-label]="
+                'roadmap.publicShare.bar.ariaLabel' | transloco: { name: initiative.name, period: periodLabel(initiative) }
+              "
+            >
+              <span class="rm-bar__label">{{ initiative.name }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}
