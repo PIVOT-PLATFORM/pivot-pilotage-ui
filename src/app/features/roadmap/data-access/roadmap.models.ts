@@ -73,7 +73,70 @@ export interface RoadmapApiError {
 }
 
 /** Machine-readable error codes the backend may return on 400/409 — see `RoadmapExceptionHandler`. */
-export type RoadmapErrorCode = 'LANE_REQUIRED' | 'LANE_NOT_FOUND' | 'INVALID_PERIOD' | 'LANE_DUPLICATE';
+export type RoadmapErrorCode =
+  | 'LANE_REQUIRED'
+  | 'LANE_NOT_FOUND'
+  | 'INVALID_PERIOD'
+  | 'LANE_DUPLICATE'
+  | 'MILESTONE_DATE_REQUIRED'
+  | 'MILESTONE_DATE_OUT_OF_BOUNDS';
+
+/**
+ * A strategic milestone (US22.3.4 — "Jalons stratégiques") — mirrors `MilestoneResponse`. **Not**
+ * a separate entity: same underlying `pilotage.task` row as an `Initiative` (`node_kind =
+ * MILESTONE`, `duration_minutes = 0`), exposed under its own `/milestones` endpoint so this
+ * frontend gets a structural (non-color) signal to identify it — see A11y AC and
+ * `MilestoneMarkerComponent`. Written once via `date` and read back identically by this view and
+ * any future Gantt consumer (EN22.1 "modèle temporel unique") — no transformation, no
+ * duplication, see the backlog file's "Notes d'implémentation".
+ */
+export interface Milestone {
+  readonly id: number;
+  /**
+   * `null` when the milestone is a cross-project marker with no natural lane (e.g. "go/no-go",
+   * steering committee review) — unlike {@link Initiative}, a lane is optional here.
+   */
+  readonly laneId: number | null;
+  readonly name: string;
+  /**
+   * ISO `yyyy-MM-dd`. `POST` always requires a date (Error AC — `MILESTONE_DATE_REQUIRED`), but
+   * the list endpoint documents undated milestones sorting last — modelled as nullable defensively
+   * so a future/legacy undated record is never silently mis-rendered as "today".
+   */
+  readonly date: string | null;
+  readonly temporalPrecision: TemporalPrecision;
+  /** Monotonic revision counter (optimistic co-editing lock) — not enforced client-side yet. */
+  readonly revision: number;
+}
+
+/** Body of `POST .../roadmap/milestones` — mirrors `CreateMilestoneRequest`. `date` is mandatory (Error AC). `laneId` is optional — see {@link Milestone}'s TSDoc. */
+export interface CreateMilestoneRequest {
+  readonly name: string;
+  readonly date: string;
+  readonly laneId?: number;
+}
+
+/**
+ * Body of `PATCH .../roadmap/milestones/{id}` — mirrors `UpdateMilestoneRequest`. Every field
+ * optional; an absent field means "leave unchanged" (same convention as
+ * {@link UpdateInitiativePlacementRequest} — this service never sends an explicit `null`).
+ */
+export interface UpdateMilestoneRequest {
+  readonly date?: string;
+  readonly laneId?: number;
+}
+
+/**
+ * A fully-resolved new date for a milestone, emitted by `MilestoneMarkerComponent` once a
+ * mouse drag/drop or a keyboard nudge is committed (AC "date change" + A11y AC). Always the
+ * absolute new date (never a delta) — mirrors {@link InitiativePlacementChange}'s own contract,
+ * snapped to the currently selected axis grain's period boundary, same as an initiative's own
+ * placement (see that component's TSDoc on why this view's "approximate" editing never operates
+ * at finer-than-period granularity, regardless of the object's own `temporalPrecision`).
+ */
+export interface MilestoneDateChange {
+  readonly date: string;
+}
 
 /**
  * A fully-resolved new placement for an initiative, emitted by `InitiativeBarComponent` once a

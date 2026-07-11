@@ -5,10 +5,13 @@ import { environment } from '../../../../environments/environment';
 import {
   CreateInitiativeRequest,
   CreateLaneRequest,
+  CreateMilestoneRequest,
   Initiative,
   Lane,
+  Milestone,
   RoadmapProjectRef,
   UpdateInitiativePlacementRequest,
+  UpdateMilestoneRequest,
 } from './roadmap.models';
 
 /**
@@ -27,11 +30,22 @@ import {
  * `BoardService` (`pivot-collaboratif-ui`).
  *
  * **Known platform gap** — every write endpoint (`createLane`, `createInitiative`,
- * `updatePlacement`) currently 403s unconditionally server-side: `RoadmapEditPolicy` is wired
- * fail-closed (`DenyAllRoadmapEditPolicy`) pending `pivot-core-starter`'s project/team
- * membership resolution (same posture as EN18.10's `OrganizationProfileOverridePolicy`). This
- * service and its callers are fully functional and tested against the *intended* contract; only
- * the backend's role gate itself is temporarily always-deny.
+ * `updatePlacement`, and the two milestone writes below) currently 403s unconditionally
+ * server-side: `RoadmapEditPolicy` is wired fail-closed (`DenyAllRoadmapEditPolicy`) pending
+ * `pivot-core-starter`'s project/team membership resolution (same posture as EN18.10's
+ * `OrganizationProfileOverridePolicy`). This service and its callers are fully functional and
+ * tested against the *intended* contract; only the backend's role gate itself is temporarily
+ * always-deny.
+ *
+ * **Milestones (US22.3.4 — "Jalons stratégiques").** `listMilestones`/`createMilestone`/
+ * `updateMilestone` extend this same contract (`pivot-pilotage-core#37`) with the exact same
+ * conventions (controller/service/DTO/error shape) — a milestone is **not** a separate entity
+ * either, see `Milestone`'s TSDoc. `RoadmapEditPolicy` (the same fail-closed policy as above,
+ * "Réutilise `RoadmapEditPolicy`" per the backlog file) is the sole security gate — this is the
+ * Security AC's enforcement point: an unauthorized user's create/date-change attempt 403s here,
+ * which the caller (`RoadmapBoardComponent`) turns into a rollback + explicit error, effectively
+ * leaving that user in a read-only view without this service or any component needing to know
+ * the user's role itself (no client-side role gating — see that component's TSDoc).
  */
 @Injectable({ providedIn: 'root' })
 export class RoadmapApiService {
@@ -93,5 +107,45 @@ export class RoadmapApiService {
     request: UpdateInitiativePlacementRequest,
   ): Observable<Initiative> {
     return this.http.patch<Initiative>(`${this.baseUrl(ref)}/initiatives/${initiativeId}`, request);
+  }
+
+  /**
+   * Lists a project's strategic milestones (US22.3.4), sorted by date (undated ones last per the
+   * backend contract — see `Milestone`'s TSDoc).
+   *
+   * @throws HttpErrorResponse 404 if the tenant/team/project triplet resolves to no visible project
+   */
+  listMilestones(ref: RoadmapProjectRef): Observable<Milestone[]> {
+    return this.http.get<Milestone[]>(`${this.baseUrl(ref)}/milestones`);
+  }
+
+  /**
+   * Creates a strategic milestone. `laneId` is optional — a milestone without one is a
+   * cross-project marker (see `Milestone`'s TSDoc).
+   *
+   * @throws HttpErrorResponse 400 (`MILESTONE_DATE_REQUIRED` — no `date` supplied;
+   *         `MILESTONE_DATE_OUT_OF_BOUNDS` — outside the project's derived bounds; `LANE_NOT_FOUND`
+   *         — `laneId` supplied but unknown/foreign), 403 (unauthorized — fail-closed today, see
+   *         class TSDoc), 404
+   */
+  createMilestone(ref: RoadmapProjectRef, request: CreateMilestoneRequest): Observable<Milestone> {
+    return this.http.post<Milestone>(`${this.baseUrl(ref)}/milestones`, request);
+  }
+
+  /**
+   * Moves and/or re-lanes a milestone — every field optional, `undefined` means "leave unchanged"
+   * (this service never sends an explicit `null`, see `UpdateMilestoneRequest`'s TSDoc). This is
+   * the sole write path for a milestone's date — roadmap and any future Gantt view read the same
+   * row, so no separate propagation step is needed for the "date change reflected everywhere" AC.
+   *
+   * @throws HttpErrorResponse 400 (`MILESTONE_DATE_OUT_OF_BOUNDS`, `LANE_NOT_FOUND`), 403
+   *         (unauthorized — fail-closed today, see class TSDoc), 404 (project or milestone not visible)
+   */
+  updateMilestone(
+    ref: RoadmapProjectRef,
+    milestoneId: number,
+    request: UpdateMilestoneRequest,
+  ): Observable<Milestone> {
+    return this.http.patch<Milestone>(`${this.baseUrl(ref)}/milestones/${milestoneId}`, request);
   }
 }
