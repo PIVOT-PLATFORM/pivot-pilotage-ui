@@ -281,5 +281,162 @@
         "announceDeleted": "Dépendance supprimée : {{predecessor}} → {{successor}}."
       }
     }
+  },
+  "calendar": {
+    "scopes": {
+      "PROJECT": "Projet",
+      "TASK": "Tâche",
+      "RESOURCE": "Ressource"
+    },
+    "days": {
+      "MON": "Lundi",
+      "TUE": "Mardi",
+      "WED": "Mercredi",
+      "THU": "Jeudi",
+      "FRI": "Vendredi",
+      "SAT": "Samedi",
+      "SUN": "Dimanche"
+    },
+    "manager": {
+      "title": "Calendriers de temps ouvré",
+      "workingDaysLabel": "Jours ouvrés",
+      "rangesLabel": "Horaires ouvrés",
+      "range": {
+        "startLabel": "Heure de début",
+        "endLabel": "Heure de fin",
+        "add": "Ajouter une plage",
+        "remove": "Supprimer"
+      },
+      "create": {
+        "heading": "Créer un calendrier",
+        "scopeLabel": "Niveau",
+        "projectIdLabel": "Id du projet (optionnel — laisser vide pour un calendrier réutilisable)",
+        "nameLabel": "Nom",
+        "submit": "Créer le calendrier",
+        "errors": {
+          "NAME_REQUIRED": "Le nom du calendrier est requis.",
+          "WORKING_DAYS_REQUIRED": "Au moins un jour ouvré est requis.",
+          "INVALID_RANGE": "Chaque plage horaire doit se terminer strictement après son heure de début.",
+          "INVALID_PROJECT_ID": "L'id du projet doit être un nombre.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour créer un calendrier (rôle d'administration du projet requis).",
+          "NOT_FOUND": "Le projet indiqué est introuvable ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de créer le calendrier."
+        }
+      },
+      "list": {
+        "loading": "Chargement des calendriers…",
+        "retry": "Réessayer",
+        "empty": "Aucun calendrier pour l'instant — créez-en un pour définir les jours ouvrés.",
+        "columns": {
+          "name": "Nom",
+          "scope": "Niveau",
+          "workingDays": "Jours ouvrés",
+          "ranges": "Horaires ouvrés",
+          "actions": "Actions"
+        },
+        "actions": {
+          "edit": "Modifier",
+          "exceptions": "Exceptions"
+        }
+      },
+      "load": {
+        "errors": {
+          "NOT_FOUND": "Ce tenant/équipe est introuvable ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de charger les calendriers."
+        }
+      },
+      "edit": {
+        "nameLabel": "Nom",
+        "submit": "Enregistrer",
+        "cancel": "Annuler",
+        "errors": {
+          "NAME_REQUIRED": "Le nom du calendrier est requis.",
+          "WORKING_DAYS_REQUIRED": "Au moins un jour ouvré est requis.",
+          "INVALID_RANGE": "Chaque plage horaire doit se terminer strictement après son heure de début.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour modifier ce calendrier (rôle d'administration du projet requis).",
+          "NOT_FOUND": "Ce calendrier est introuvable.",
+          "GENERIC": "Impossible de mettre à jour le calendrier."
+        }
+      },
+      "delete": {
+        "button": "Supprimer",
+        "confirmPrompt": "Confirmer la suppression ?",
+        "confirmButton": "Oui, supprimer",
+        "cancelButton": "Annuler",
+        "errors": {
+          "FORBIDDEN": "Vous n'avez pas les droits pour supprimer ce calendrier (rôle d'administration du projet requis).",
+          "NOT_FOUND": "Ce calendrier est introuvable.",
+          "GENERIC": "Impossible de supprimer le calendrier."
+        }
+      }
+    },
+    "exceptions": {
+      "title": "Exceptions (jours fériés, fermetures, jours exceptionnellement travaillés)",
+      "add": {
+        "startDateLabel": "Date de début",
+        "endDateLabel": "Date de fin",
+        "typeLabel": "Type",
+        "type": {
+          "off": "Jour non travaillé (férié, fermeture)",
+          "working": "Exceptionnellement travaillé"
+        },
+        "rangesLabel": "Horaires spécifiques (optionnel — laisser vide pour utiliser les horaires par défaut du calendrier)",
+        "addRange": "Ajouter une plage",
+        "submit": "Ajouter l'exception",
+        "errors": {
+          "DATES_REQUIRED": "Une date de début et une date de fin sont requises.",
+          "END_BEFORE_START": "La date de fin ne peut pas être antérieure à la date de début.",
+          "INVALID_RANGE": "Chaque plage horaire doit se terminer strictement après son heure de début.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour ajouter une exception (rôle d'administration du projet requis).",
+          "NOT_FOUND": "Ce calendrier est introuvable.",
+          "GENERIC": "Impossible d'ajouter l'exception."
+        }
+      },
+      "list": {
+        "loading": "Chargement des exceptions…",
+        "retry": "Réessayer",
+        "empty": "Aucune exception pour ce calendrier pour l'instant.",
+        "columns": {
+          "date": "Date",
+          "type": "Type",
+          "ranges": "Horaires",
+          "actions": "Actions"
+        },
+        "type": {
+          "off": "Jour non travaillé",
+          "working": "Exceptionnellement travaillé"
+        }
+      },
+      "load": {
+        "errors": {
+          "FORBIDDEN": "Vous n'avez pas les droits pour consulter les exceptions de ce calendrier.",
+          "NOT_FOUND": "Ce calendrier est introuvable.",
+          "GENERIC": "Impossible de charger les exceptions."
+        }
+      },
+      "remove": {
+        "button": "Supprimer",
+        "confirmPrompt": "Confirmer la suppression ?",
+        "confirmButton": "Oui, supprimer",
+        "cancelButton": "Annuler",
+        "errors": {
+          "FORBIDDEN": "Vous n'avez pas les droits pour supprimer cette exception (rôle d'administration du projet requis).",
+          "NOT_FOUND": "Cette exception est introuvable.",
+          "GENERIC": "Impossible de supprimer l'exception."
+        }
+      }
+    },
+    "effective": {
+      "title": "Calendrier effectif",
+      "loading": "Résolution du calendrier effectif…",
+      "retry": "Réessayer",
+      "resolvedFromLabel": "Résolu depuis :",
+      "nameLabel": "Nom",
+      "scopeLabel": "Niveau",
+      "errors": {
+        "NOT_FOUND": "Cette tâche est introuvable, ou aucun calendrier ne se résout pour elle.",
+        "GENERIC": "Impossible de résoudre le calendrier effectif."
+      }
+    }
   }
 }
