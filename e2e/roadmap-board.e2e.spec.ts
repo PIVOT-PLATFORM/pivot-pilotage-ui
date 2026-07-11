@@ -140,3 +140,68 @@ async function stubRoadmap(page: Page, data: { lanes: LaneDto[]; initiatives: un
   await page.route(`${API_BASE}/lanes`, route => fulfillJson(route, 200, data.lanes));
   await page.route(`${API_BASE}/initiatives`, route => fulfillJson(route, 200, data.initiatives));
 }
+
+test.describe('Échelle de temps floue (US22.3.2)', () => {
+  test('switches the axis grain (mois/trimestre/semestre) with the keyboard, without touching the stored period', async ({
+    page,
+  }) => {
+    let updatePlacementCalls = 0;
+
+    await stubRoadmap(page, {
+      lanes: [{ id: 10, name: 'Thème A', position: 0 }],
+      initiatives: [
+        {
+          id: 100,
+          laneId: 10,
+          name: 'Initiative A',
+          fuzzyPeriodStart: '2026-02-10',
+          fuzzyPeriodEnd: '2026-02-20',
+          temporalPrecision: 'QUARTER',
+          revision: 0,
+        },
+      ],
+    });
+    await page.route(`${API_BASE}/initiatives/100`, async route => {
+      updatePlacementCalls++;
+      await fulfillJson(route, 200, {});
+    });
+
+    await page.goto(TENANT_PATH);
+
+    const scaleSelect = page.getByLabel('Échelle de temps');
+    await expect(scaleSelect).toBeVisible();
+    // AC — default grain is Trimestre (QUARTER), matching US22.3.1's fixed axis.
+    await expect(scaleSelect).toHaveValue('QUARTER');
+
+    // A11y AC — keyboard-operable: focus the selector directly (two other forms precede it in
+    // tab order, so a single blind `Tab` from page load isn't a reliable way to reach it — see
+    // `RoadmapBoardComponent`'s template), then drive it with real keyboard input. A native
+    // `<select>` moves to the adjacent option on ArrowUp/ArrowDown without opening a popup —
+    // `MONTH` is the option just before the default `QUARTER`.
+    await scaleSelect.focus();
+    await expect(scaleSelect).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(scaleSelect).toHaveValue('MONTH');
+
+    // AC — bars re-align on the new grain's period boundaries; the initiative's own stored
+    // period is never touched by a scale switch (no PATCH fired).
+    const bar = page.getByRole('button', { name: /Initiative A/ });
+    await expect(bar).toBeVisible();
+    expect(updatePlacementCalls).toBe(0);
+
+    // ArrowDown twice: MONTH -> QUARTER -> SEMESTER.
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await expect(scaleSelect).toHaveValue('SEMESTER');
+    await expect(bar).toBeVisible();
+    expect(updatePlacementCalls).toBe(0);
+
+    // Error AC — switching back to the original grain never lost/truncated the stored period:
+    // no error surfaced, initiative still rendered.
+    await page.keyboard.press('ArrowUp');
+    await expect(scaleSelect).toHaveValue('QUARTER');
+    await expect(bar).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    expect(updatePlacementCalls).toBe(0);
+  });
+});

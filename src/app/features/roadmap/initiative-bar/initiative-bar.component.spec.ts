@@ -3,9 +3,10 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { describe, it, expect } from 'vitest';
 import { InitiativeBarComponent } from './initiative-bar.component';
 import { Initiative, InitiativePlacementChange } from '../data-access/roadmap.models';
-import { LANE_HEIGHT_PX, QUARTER_WIDTH_PX, buildQuarterAxis } from '../roadmap-timeline';
+import { LANE_HEIGHT_PX, PERIOD_WIDTH_PX, buildTimeAxis } from '../roadmap-timeline';
 
-const QUARTERS = buildQuarterAxis(new Date(Date.UTC(2026, 0, 1)), 8); // Q1 2026 .. Q4 2027
+const QUARTER_WIDTH_PX = PERIOD_WIDTH_PX.QUARTER;
+const QUARTERS = buildTimeAxis(new Date(Date.UTC(2026, 0, 1)), 'QUARTER', 8); // Q1 2026 .. Q4 2027
 const LANE_IDS = [10, 20, 30];
 
 function makeInitiative(overrides: Partial<Initiative> = {}): Initiative {
@@ -42,7 +43,7 @@ function create(initiative: Initiative = makeInitiative()): Harness {
   });
   const fixture = TestBed.createComponent(InitiativeBarComponent);
   fixture.componentRef.setInput('initiative', initiative);
-  fixture.componentRef.setInput('quarters', QUARTERS);
+  fixture.componentRef.setInput('periods', QUARTERS);
   fixture.componentRef.setInput('laneIds', LANE_IDS);
   const component = fixture.componentInstance;
   const emitted: InitiativePlacementChange[] = [];

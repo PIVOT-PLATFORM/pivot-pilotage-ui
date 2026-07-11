@@ -40,11 +40,17 @@
   overflow-x: auto;
 }
 
-.rm-board__quarters {
+.rm-board__scale {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rm-board__periods {
   display: flex;
 }
 
-.rm-board__quarter-cell {
+.rm-board__period-cell {
   flex: none;
   text-align: center;
   font-size: 0.75rem;
@@ -78,7 +84,8 @@
   flex: none;
   height: 100%;
   background-image: linear-gradient(to right, #f1f3f4 1px, transparent 1px);
-  background-size: 96px 100%; // QUARTER_WIDTH_PX
+  // background-size is set inline (see template) — it must track the currently selected time
+  // scale's column width (US22.3.2: month/quarter/semester each have their own PERIOD_WIDTH_PX).
 }
 
 .rm-board__bars {
@@ -102,7 +109,8 @@
 .rm-board__form input:focus-visible,
 .rm-board__form select:focus-visible,
 .rm-board__form button:focus-visible,
-.rm-board__status button:focus-visible {
+.rm-board__status button:focus-visible,
+.rm-board__scale select:focus-visible {
   outline: 3px solid #202124;
   outline-offset: 2px;
 }

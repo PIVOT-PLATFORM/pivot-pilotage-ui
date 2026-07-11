@@ -7,8 +7,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { RoadmapBoardComponent } from './roadmap-board.component';
 import { RoadmapApiService } from '../data-access/roadmap-api.service';
 import { Initiative, Lane } from '../data-access/roadmap.models';
-import { QUARTER_WIDTH_PX } from '../roadmap-timeline';
+import { RoadmapTimeScaleService } from '../roadmap-time-scale.service';
+import { PERIOD_WIDTH_PX, RoadmapTimeScale } from '../roadmap-timeline';
 
+const QUARTER_WIDTH_PX = PERIOD_WIDTH_PX.QUARTER;
 const REF = { tenantId: 1, teamId: 2, projectId: 3 };
 const LANE_A: Lane = { id: 10, name: 'Thème A', position: 0 };
 const LANE_B: Lane = { id: 20, name: 'Thème B', position: 1 };
@@ -31,6 +33,11 @@ interface ApiMock {
   updatePlacement: ReturnType<typeof vi.fn>;
 }
 
+interface TimeScaleServiceMock {
+  read: ReturnType<typeof vi.fn>;
+  write: ReturnType<typeof vi.fn>;
+}
+
 function makeApiMock(overrides: Partial<ApiMock> = {}): ApiMock {
   return {
     listLanes: vi.fn(() => of([LANE_A, LANE_B])),
@@ -42,11 +49,22 @@ function makeApiMock(overrides: Partial<ApiMock> = {}): ApiMock {
   };
 }
 
-function createFixture(api: ApiMock): ComponentFixture<RoadmapBoardComponent> {
+function makeTimeScaleServiceMock(initial: RoadmapTimeScale = 'QUARTER'): TimeScaleServiceMock {
+  return {
+    read: vi.fn(() => initial),
+    write: vi.fn(),
+  };
+}
+
+function createFixture(
+  api: ApiMock,
+  timeScaleService: TimeScaleServiceMock = makeTimeScaleServiceMock(),
+): ComponentFixture<RoadmapBoardComponent> {
   TestBed.configureTestingModule({
     imports: [RoadmapBoardComponent, TranslocoTestingModule.forRoot({ langs: { fr: {}, en: {} } })],
     providers: [
       { provide: RoadmapApiService, useValue: api },
+      { provide: RoadmapTimeScaleService, useValue: timeScaleService },
       {
         provide: ActivatedRoute,
         useValue: { snapshot: { paramMap: convertToParamMap({ tenantId: '1', teamId: '2', projectId: '3' }) } },
@@ -56,6 +74,13 @@ function createFixture(api: ApiMock): ComponentFixture<RoadmapBoardComponent> {
   const fixture = TestBed.createComponent(RoadmapBoardComponent);
   fixture.detectChanges();
   return fixture;
+}
+
+function setTimeScale(fixture: ComponentFixture<RoadmapBoardComponent>, scale: RoadmapTimeScale): void {
+  const select = (fixture.nativeElement as HTMLElement).querySelector('#rm-time-scale') as HTMLSelectElement;
+  select.value = scale;
+  select.dispatchEvent(new Event('change', { bubbles: true }));
+  fixture.detectChanges();
 }
 
 function text(fixture: ComponentFixture<RoadmapBoardComponent>): string {
@@ -343,6 +368,121 @@ describe('RoadmapBoardComponent', () => {
       // first's (Q2, index 1) — pixel position is asserted rather than text, since the bar's
       // aria-label isn't interpolated under TranslocoTestingModule's stub.
       expect(bar.style.left).toBe(`${QUARTER_WIDTH_PX * 2}px`);
+    });
+  });
+
+  describe('time scale (US22.3.2 — "Échelle de temps floue")', () => {
+    it('renders the scale selector as a labelled, native <select> defaulting to QUARTER', () => {
+      const fixture = createFixture(makeApiMock());
+
+      const label = (fixture.nativeElement as HTMLElement).querySelector('label[for="rm-time-scale"]');
+      const select = (fixture.nativeElement as HTMLElement).querySelector('#rm-time-scale') as HTMLSelectElement;
+
+      expect(label).not.toBeNull();
+      expect(select.tagName).toBe('SELECT');
+      expect(select.value).toBe('QUARTER');
+    });
+
+    it('AC — aligns bars on quarter boundaries by default (2 columns wide for a whole-quarter period)', () => {
+      const fixture = createFixture(makeApiMock());
+
+      const bar = (fixture.nativeElement as HTMLElement).querySelector('.rm-bar') as HTMLElement;
+      expect(bar.style.width).toBe(`${QUARTER_WIDTH_PX}px`);
+    });
+
+    it('AC — switching to MONTH re-projects the period header at month granularity (12 columns/year)', () => {
+      const fixture = createFixture(makeApiMock());
+
+      setTimeScale(fixture, 'MONTH');
+
+      const cells = (fixture.nativeElement as HTMLElement).querySelectorAll('.rm-board__period-cell');
+      expect(cells).toHaveLength(24); // PERIOD_AXIS_LENGTH.MONTH
+      expect(cells[0].textContent?.trim()).toMatch(/^[A-Za-z]{3} \d{4}$/);
+    });
+
+    it('AC — switching to SEMESTER re-projects the period header labelled H1/H2', () => {
+      const fixture = createFixture(makeApiMock());
+
+      setTimeScale(fixture, 'SEMESTER');
+
+      const cells = (fixture.nativeElement as HTMLElement).querySelectorAll('.rm-board__period-cell');
+      expect(cells).toHaveLength(4); // PERIOD_AXIS_LENGTH.SEMESTER
+      expect(cells[0].textContent?.trim()).toMatch(/^H[12] \d{4}$/);
+    });
+
+    it('persists the chosen scale via RoadmapTimeScaleService, scoped to this roadmap', () => {
+      const timeScaleService = makeTimeScaleServiceMock();
+      const fixture = createFixture(makeApiMock(), timeScaleService);
+
+      setTimeScale(fixture, 'MONTH');
+
+      expect(timeScaleService.write).toHaveBeenCalledWith(REF, 'MONTH');
+    });
+
+    it('restores a previously-persisted scale on load (reads it once from RoadmapTimeScaleService)', () => {
+      const timeScaleService = makeTimeScaleServiceMock('SEMESTER');
+      const fixture = createFixture(makeApiMock(), timeScaleService);
+
+      const select = (fixture.nativeElement as HTMLElement).querySelector('#rm-time-scale') as HTMLSelectElement;
+      expect(select.value).toBe('SEMESTER');
+      expect(timeScaleService.read).toHaveBeenCalledWith(REF);
+    });
+
+    it('Security AC — switching scale never calls the roadmap API (pure client-side view setting)', () => {
+      const api = makeApiMock();
+      const fixture = createFixture(api);
+
+      setTimeScale(fixture, 'MONTH');
+      setTimeScale(fixture, 'SEMESTER');
+
+      expect(api.listLanes).toHaveBeenCalledTimes(1);
+      expect(api.listInitiatives).toHaveBeenCalledTimes(1);
+      expect(api.updatePlacement).not.toHaveBeenCalled();
+      expect(api.createLane).not.toHaveBeenCalled();
+      expect(api.createInitiative).not.toHaveBeenCalled();
+    });
+
+    it('Error AC — cycling through every scale and back to the original never drifts the bar (no loss/truncation of the stored period)', () => {
+      const initiative: Initiative = { ...INITIATIVE_A, fuzzyPeriodStart: '2026-02-10', fuzzyPeriodEnd: '2026-02-20' };
+      const api = makeApiMock({ listInitiatives: vi.fn(() => of([initiative])) });
+      const fixture = createFixture(api);
+      const bar = () => (fixture.nativeElement as HTMLElement).querySelector('.rm-bar') as HTMLElement;
+
+      const originalLeft = bar().style.left;
+      const originalWidth = bar().style.width;
+
+      setTimeScale(fixture, 'MONTH');
+      setTimeScale(fixture, 'SEMESTER');
+      setTimeScale(fixture, 'QUARTER');
+
+      expect(bar().style.left).toBe(originalLeft);
+      expect(bar().style.width).toBe(originalWidth);
+      expect(api.updatePlacement).not.toHaveBeenCalled();
+    });
+
+    it('AC — an initiative with no precise date is never assigned one merely by switching scale', () => {
+      const unplaced: Initiative = { ...INITIATIVE_A, fuzzyPeriodStart: null, fuzzyPeriodEnd: null };
+      const api = makeApiMock({ listInitiatives: vi.fn(() => of([unplaced])) });
+      const fixture = createFixture(api);
+
+      setTimeScale(fixture, 'MONTH');
+
+      expect(api.updatePlacement).not.toHaveBeenCalled();
+      // Still renders as a single-column chip at the axis start — never forced onto a fabricated date.
+      const bar = (fixture.nativeElement as HTMLElement).querySelector('.rm-bar') as HTMLElement;
+      expect(bar.style.left).toBe('0px');
+    });
+
+    it('A11y — the select is keyboard-focusable and its accessible label is programmatically associated', () => {
+      const fixture = createFixture(makeApiMock());
+
+      const select = (fixture.nativeElement as HTMLElement).querySelector('#rm-time-scale') as HTMLSelectElement;
+      select.focus();
+
+      expect(document.activeElement).toBe(select);
+      expect(select.getAttribute('id')).toBe('rm-time-scale');
+      const label = (fixture.nativeElement as HTMLElement).querySelector('label[for="rm-time-scale"]');
+      expect(label?.getAttribute('for')).toBe(select.id);
     });
   });
 });
