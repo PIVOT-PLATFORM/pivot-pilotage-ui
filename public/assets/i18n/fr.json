@@ -5,6 +5,14 @@
       "loading": "Chargement de la roadmap…",
       "retry": "Réessayer",
       "noLanes": "Aucune lane pour l'instant — créez-en une pour commencer à poser des initiatives.",
+      "timeScale": {
+        "label": "Échelle de temps",
+        "options": {
+          "MONTH": "Mois",
+          "QUARTER": "Trimestre",
+          "SEMESTER": "Semestre"
+        }
+      },
       "load": {
         "errors": {
           "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",

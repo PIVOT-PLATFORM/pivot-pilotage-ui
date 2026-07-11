@@ -5,6 +5,14 @@
       "loading": "Loading the roadmap…",
       "retry": "Retry",
       "noLanes": "No lanes yet — create one to start posing initiatives.",
+      "timeScale": {
+        "label": "Time scale",
+        "options": {
+          "MONTH": "Month",
+          "QUARTER": "Quarter",
+          "SEMESTER": "Semester"
+        }
+      },
       "load": {
         "errors": {
           "NOT_FOUND": "This project could not be found, or you don't have access to it.",
