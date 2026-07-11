@@ -92,6 +92,17 @@
       }
     </form>
 
+    <div class="rm-board__toolbar">
+      <button type="button" (click)="toggleSharePanel()">
+        {{ 'roadmap.share.toggleButton' | transloco }}
+      </button>
+      <app-roadmap-export-button [target]="captureAreaRef()?.nativeElement ?? null" filenamePrefix="roadmap" />
+    </div>
+
+    @if (sharePanelOpen()) {
+      <app-roadmap-share-panel [projectRef]="projectRef" />
+    }
+
     @if (lanes().length === 0 && milestones().length === 0) {
       <p class="rm-board__empty">{{ 'roadmap.board.noLanes' | transloco }}</p>
     } @else {
@@ -104,7 +115,7 @@
         </select>
       </div>
 
-      <div class="rm-board__timeline">
+      <div class="rm-board__timeline" #roadmapCaptureArea>
         <div class="rm-board__periods" [style.margin-left.px]="laneLabelWidthPx">
           @for (period of periods(); track period.index) {
             <div class="rm-board__period-cell" [style.width.px]="periodWidthPx()">{{ period.label }}</div>

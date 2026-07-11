@@ -1,0 +1,119 @@
+// Mirrors `roadmap-board.component.scss`/`initiative-bar.component.scss`'s visual language so a
+// share-link recipient sees essentially the same roadmap the editor does (and so a PNG/PDF export
+// taken from this page looks consistent with one taken from the editable board). Angular's
+// per-component style encapsulation means these rules must be duplicated here rather than shared
+// — deliberately kept minimal and scoped to this read-only view (no drag-handle/cursor rules,
+// since none of those affordances exist on this page, see component TSDoc).
+
+.rm-public-share {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.rm-public-share__title {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.rm-public-share__badge {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  background: #f1f3f4;
+  color: #202124;
+  font-size: 0.85rem;
+}
+
+.rm-public-share__status {
+  padding: 1rem;
+
+  &--error {
+    color: #b3261e;
+  }
+}
+
+.rm-public-share__empty {
+  color: #5f6368;
+}
+
+.rm-board__timeline {
+  position: relative;
+  overflow-x: auto;
+}
+
+.rm-board__periods {
+  display: flex;
+}
+
+.rm-board__period-cell {
+  flex: none;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #5f6368;
+  border-bottom: 1px solid #dadce0;
+  padding-bottom: 0.25rem;
+}
+
+.rm-board__lanes {
+  display: flex;
+  flex-direction: column;
+}
+
+.rm-lane {
+  display: flex;
+  align-items: center;
+  height: 64px; // LANE_HEIGHT_PX
+  border-bottom: 1px solid #e8eaed;
+}
+
+.rm-lane__label {
+  flex: none;
+  padding-right: 0.5rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rm-lane__track {
+  flex: none;
+  height: 100%;
+  background-image: linear-gradient(to right, #f1f3f4 1px, transparent 1px);
+}
+
+.rm-board__bars {
+  position: absolute;
+  top: 32px; // approx. quarter header height
+}
+
+.rm-bar--readonly {
+  position: absolute;
+  box-sizing: border-box;
+  height: 40px;
+  margin-top: 12px; // vertical centering within the 64px lane row (LANE_HEIGHT_PX)
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  // Contraste texte blanc / fond #0b5cab vérifié WCAG 2.1 AA (~6.7:1, >= 4.5:1 requis) — identique
+  // à `initiative-bar.component.scss`.
+  background: #0b5cab;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+  // Deliberately no `cursor: grab`/`touch-action: none` — this chip is not draggable (see
+  // component TSDoc: no pointer/keyboard handlers exist on it at all).
+}
+
+.rm-bar__label {
+  flex: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

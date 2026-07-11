@@ -94,6 +94,81 @@
           "GENERIC": "Could not update the milestone."
         }
       }
+    },
+    "export": {
+      "pngButton": "Export as PNG",
+      "pdfButton": "Export as PDF",
+      "exporting": "Exporting…",
+      "errors": {
+        "GENERIC": "Could not export the roadmap."
+      }
+    },
+    "share": {
+      "toggleButton": "Share links",
+      "title": "Share links",
+      "create": {
+        "expiresAtLabel": "Expiry (optional)",
+        "submit": "Create a link",
+        "errors": {
+          "EXPIRY_INVALID": "The expiry date must be strictly in the future.",
+          "FORBIDDEN": "You don't have permission to create a share link for this project.",
+          "NOT_FOUND": "This project could not be found, or you don't have access to it.",
+          "GENERIC": "Could not create the share link."
+        }
+      },
+      "tokenReveal": {
+        "title": "Link created — copy it now",
+        "warning": "This link will never be shown again after you close this message. Copy it now if you haven't already.",
+        "copyButton": "Copy link",
+        "copied": "Link copied.",
+        "copyError": "Could not copy automatically — select and copy the link text manually.",
+        "dismiss": "Close"
+      },
+      "list": {
+        "loading": "Loading share links…",
+        "retry": "Retry",
+        "empty": "No share links yet.",
+        "noExpiry": "No expiry",
+        "columns": {
+          "createdAt": "Created",
+          "expiresAt": "Expires",
+          "status": "Status",
+          "actions": "Actions"
+        },
+        "status": {
+          "active": "Active",
+          "revoked": "Revoked",
+          "expired": "Expired"
+        },
+        "errors": {
+          "FORBIDDEN": "You don't have permission to view this project's share links.",
+          "NOT_FOUND": "This project could not be found, or you don't have access to it.",
+          "GENERIC": "Could not load the share links."
+        }
+      },
+      "revoke": {
+        "button": "Revoke",
+        "confirmPrompt": "Confirm revocation?",
+        "confirmButton": "Yes, revoke",
+        "cancelButton": "Cancel",
+        "errors": {
+          "FORBIDDEN": "You don't have permission to revoke this share link.",
+          "NOT_FOUND": "This share link could not be found.",
+          "GENERIC": "Could not revoke the share link."
+        }
+      }
+    },
+    "publicShare": {
+      "loading": "Loading the shared roadmap…",
+      "errorTitle": "Share link unavailable",
+      "errors": {
+        "INVALID": "This share link is invalid, expired, or has been revoked."
+      },
+      "readonlyNotice": "Read-only view — you cannot edit this roadmap.",
+      "noLanes": "This roadmap has no lanes yet.",
+      "bar": {
+        "ariaLabel": "Initiative {{name}}, {{period}}."
+      }
     }
   }
 }

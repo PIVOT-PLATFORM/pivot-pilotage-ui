@@ -22,6 +22,11 @@ import { Routes } from '@angular/router';
  * l'activation de module pour être testable en isolation. Il sera appliqué via
  * `canActivateChild` sur une route racine enveloppant E22-E27/E13 dès l'intégration réelle dans
  * le shell pivot-ui (mirroring `pivot-agilite-ui/src/app/app.routes.ts`, commentaire US20.1.1).
+ *
+ * `roadmap-shares/:token` — US22.3.5 (partage & export), **route publique, aucun guard**. Ce
+ * n'est pas un oubli : un lien de partage doit être ouvrable par un destinataire sans compte
+ * PIVOT ni session — voir `RoadmapPublicShareApiService`/`RoadmapPublicShareViewComponent` TSDoc.
+ * Ne jamais lui adjoindre `moduleGuard`/`AuthGuard` un jour sans revalider ce choix.
  */
 export const routes: Routes = [
   {
@@ -32,5 +37,12 @@ export const routes: Routes = [
     path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/roadmap',
     loadComponent: () =>
       import('./features/roadmap/roadmap-board/roadmap-board.component').then((m) => m.RoadmapBoardComponent),
+  },
+  {
+    path: 'roadmap-shares/:token',
+    loadComponent: () =>
+      import('./features/roadmap/roadmap-public-share/roadmap-public-share-view.component').then(
+        (m) => m.RoadmapPublicShareViewComponent,
+      ),
   },
 ];

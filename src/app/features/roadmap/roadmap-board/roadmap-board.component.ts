@@ -3,10 +3,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   OnInit,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
@@ -24,6 +26,8 @@ import {
 } from '../data-access/roadmap.models';
 import { InitiativeBarComponent } from '../initiative-bar/initiative-bar.component';
 import { MilestoneMarkerComponent } from '../milestone-marker/milestone-marker.component';
+import { RoadmapExportButtonComponent } from '../roadmap-export-button/roadmap-export-button.component';
+import { RoadmapSharePanelComponent } from '../roadmap-share-panel/roadmap-share-panel.component';
 import { RoadmapTimeScaleService } from '../roadmap-time-scale.service';
 import { PERIOD_WIDTH_PX, PeriodCell, RoadmapTimeScale, buildTimeAxis } from '../roadmap-timeline';
 
@@ -77,12 +81,24 @@ import { PERIOD_WIDTH_PX, PeriodCell, RoadmapTimeScale, buildTimeAxis } from '..
  * route (see `app.routes.ts`) — once this module is genuinely lazy-loaded inside the `pivot-ui`
  * shell, the shell's own routing (which already resolves tenant/team context) supplies these
  * segments; this repo never types, stores or manages a tenant/team id itself.
+ *
+ * **Share & export (US22.3.5).** `RoadmapSharePanelComponent` (toggled via {@link sharePanelOpen})
+ * and `RoadmapExportButtonComponent` are embedded here purely additively — this component still
+ * owns none of their logic, it only supplies `projectRef` and a `#roadmapCaptureArea` template
+ * ref (via {@link captureAreaRef}) pointing at `.rm-board__timeline` for the export button to
+ * capture. See those components' own TSDoc for the share-link and PNG/PDF-export behaviour.
  */
 @Component({
   selector: 'app-roadmap-board',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [InitiativeBarComponent, MilestoneMarkerComponent, TranslocoPipe],
+  imports: [
+    InitiativeBarComponent,
+    MilestoneMarkerComponent,
+    RoadmapExportButtonComponent,
+    RoadmapSharePanelComponent,
+    TranslocoPipe,
+  ],
   templateUrl: './roadmap-board.component.html',
   styleUrl: './roadmap-board.component.scss',
 })
@@ -93,7 +109,8 @@ export class RoadmapBoardComponent implements OnInit {
   private readonly transloco = inject(TranslocoService);
   private readonly timeScaleService = inject(RoadmapTimeScaleService);
 
-  private readonly projectRef: RoadmapProjectRef = this.readProjectRef();
+  /** `protected` (not `private`) — bound directly in the template by `RoadmapSharePanelComponent`'s `[projectRef]` input (US22.3.5). */
+  protected readonly projectRef: RoadmapProjectRef = this.readProjectRef();
 
   /** Anchor date for the time axis, captured once — see `buildTimeAxis`'s `anchor` param. Fixed for the component's lifetime so cycling through scales never drifts the axis's "today" reference. */
   private readonly axisAnchor = new Date();
@@ -125,6 +142,11 @@ export class RoadmapBoardComponent implements OnInit {
   protected readonly placementErrorKey = signal<string | null>(null);
   /** Last placement outcome, announced via an `aria-live="polite"` region (A11y AC). */
   protected readonly announcement = signal<string | null>(null);
+
+  /** US22.3.5 — toggles the share-link management panel (`RoadmapSharePanelComponent`), collapsed by default. */
+  protected readonly sharePanelOpen = signal(false);
+  /** US22.3.5 — capture target for `RoadmapExportButtonComponent`, resolved once `.rm-board__timeline` is rendered (null while `lanes()` is empty). */
+  protected readonly captureAreaRef = viewChild<ElementRef<HTMLElement>>('roadmapCaptureArea');
 
   /**
    * One in-flight-request token per initiative id — guards `onPlacementChange` against an
@@ -183,6 +205,11 @@ export class RoadmapBoardComponent implements OnInit {
     const scale = (event.target as HTMLSelectElement).value as RoadmapTimeScale;
     this.timeScale.set(scale);
     this.timeScaleService.write(this.projectRef, scale);
+  }
+
+  /** US22.3.5 — shows/hides the share-link management panel. */
+  protected toggleSharePanel(): void {
+    this.sharePanelOpen.update(open => !open);
   }
 
   private loadRoadmap(): void {

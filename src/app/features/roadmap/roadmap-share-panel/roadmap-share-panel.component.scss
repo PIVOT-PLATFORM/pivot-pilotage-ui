@@ -1,0 +1,75 @@
+.rm-share {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+}
+
+.rm-share__title {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.rm-share__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rm-share__error {
+  flex-basis: 100%;
+  margin: 0;
+  color: #b3261e;
+}
+
+.rm-share__status {
+  padding: 0.5rem 0;
+
+  &--error {
+    color: #b3261e;
+  }
+}
+
+.rm-share__empty {
+  color: #5f6368;
+}
+
+.rm-share__reveal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 2px solid #202124;
+  border-radius: 4px;
+  background: #f1f3f4;
+}
+
+.rm-share__reveal-url {
+  word-break: break-all;
+  padding: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+}
+
+.rm-share__table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.5rem;
+    border-bottom: 1px solid #e8eaed;
+  }
+}
+
+// Contraste vérifié WCAG 2.1 AA sur inputs/boutons interactifs.
+.rm-share input:focus-visible,
+.rm-share button:focus-visible {
+  outline: 3px solid #202124;
+  outline-offset: 2px;
+}

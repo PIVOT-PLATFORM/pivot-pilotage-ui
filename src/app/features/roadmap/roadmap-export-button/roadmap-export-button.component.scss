@@ -1,0 +1,23 @@
+.rm-export {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rm-export__status {
+  color: #5f6368;
+  font-size: 0.875rem;
+}
+
+.rm-export__error {
+  flex-basis: 100%;
+  margin: 0;
+  color: #b3261e;
+}
+
+// Contraste vérifié WCAG 2.1 AA sur boutons interactifs.
+.rm-export button:focus-visible {
+  outline: 3px solid #202124;
+  outline-offset: 2px;
+}
