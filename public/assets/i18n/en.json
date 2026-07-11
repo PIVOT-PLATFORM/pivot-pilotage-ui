@@ -48,7 +48,9 @@
         }
       },
       "bar": {
-        "ariaLabel": "Initiative {{name}}, {{period}}. Arrow keys to move, Shift+arrow to resize, up/down to change lane."
+        "ariaLabel": "Initiative {{name}}, {{period}}. Arrow keys to move, Shift+arrow to resize, up/down to change lane.",
+        "announceMoved": "{{name}} moved: {{start}} → {{end}}.",
+        "announceReverted": "{{name}}: move reverted, an error occurred."
       }
     }
   }

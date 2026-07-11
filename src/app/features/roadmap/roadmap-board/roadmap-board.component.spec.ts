@@ -2,11 +2,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { describe, it, expect, vi } from 'vitest';
 import { RoadmapBoardComponent } from './roadmap-board.component';
 import { RoadmapApiService } from '../data-access/roadmap-api.service';
 import { Initiative, Lane } from '../data-access/roadmap.models';
+import { QUARTER_WIDTH_PX } from '../roadmap-timeline';
 
 const REF = { tenantId: 1, teamId: 2, projectId: 3 };
 const LANE_A: Lane = { id: 10, name: 'Thème A', position: 0 };
@@ -263,17 +264,85 @@ describe('RoadmapBoardComponent', () => {
       expect((fixture.nativeElement as HTMLElement).querySelectorAll('app-initiative-bar')).toHaveLength(1);
     });
 
-    it('maps a 400 LANE_NOT_FOUND placement error to its dedicated key', () => {
+    it.each([
+      [400, 'LANE_NOT_FOUND', 'roadmap.board.placement.errors.LANE_NOT_FOUND'],
+      [400, 'INVALID_PERIOD', 'roadmap.board.placement.errors.INVALID_PERIOD'],
+      [404, undefined, 'roadmap.board.placement.errors.NOT_FOUND'],
+      [500, undefined, 'roadmap.board.placement.errors.GENERIC'],
+    ])('maps a %d placement error (code=%s) to %s', (status, code, expectedKey) => {
       const api = makeApiMock({
         updatePlacement: vi.fn(() =>
-          throwError(() => new HttpErrorResponse({ status: 400, error: { code: 'LANE_NOT_FOUND' } })),
+          throwError(() => new HttpErrorResponse({ status, error: code ? { code } : null })),
         ),
       });
       const fixture = createFixture(api);
 
       pressArrowRight(fixture);
 
-      expect(text(fixture)).toContain('roadmap.board.placement.errors.LANE_NOT_FOUND');
+      expect(text(fixture)).toContain(expectedKey);
+    });
+
+    it('A11y — announces a "moved" message optimistically, then corrects it to "reverted" on rollback', () => {
+      const api = makeApiMock({
+        updatePlacement: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 403 }))),
+      });
+      const fixture = createFixture(api);
+
+      pressArrowRight(fixture);
+
+      const liveRegion = (fixture.nativeElement as HTMLElement).querySelector('[aria-live="polite"]');
+      // TranslocoTestingModule's stub doesn't interpolate — the raw key is what's asserted (see
+      // `wheel-detail.component.spec.ts` in pivot-agilite-ui for the same established pattern).
+      expect(liveRegion?.textContent).toContain('roadmap.board.bar.announceReverted');
+    });
+
+    it('Staleness guard — an out-of-order (older) PATCH response never clobbers a newer placement change', () => {
+      const responses: Subject<Initiative>[] = [];
+      const api = makeApiMock({
+        updatePlacement: vi.fn(() => {
+          const subject = new Subject<Initiative>();
+          responses.push(subject);
+          return subject.asObservable();
+        }),
+      });
+      const fixture = createFixture(api);
+      const bar = (fixture.nativeElement as HTMLElement).querySelector('.rm-bar') as HTMLElement;
+
+      // Two nudges in quick succession on the SAME initiative — each fires its own PATCH, neither
+      // has resolved yet. CD is flushed between them so the second nudge builds on the first's
+      // already-applied optimistic update (Q1 -> Q2 -> Q3), exactly like two real keypresses.
+      bar.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+      fixture.detectChanges();
+      bar.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+      fixture.detectChanges();
+
+      expect(responses).toHaveLength(2);
+
+      // Echo back exactly what each request actually asked for, as a real backend would — the
+      // board's quarter axis is anchored on `new Date()` (today), never a fixed calendar date,
+      // so the response bodies must be derived from the real requests, not hardcoded dates.
+      const firstRequestBody = api.updatePlacement.mock.calls[0][2] as {
+        laneId: number;
+        fuzzyPeriodStart: string;
+        fuzzyPeriodEnd: string;
+      };
+      const secondRequestBody = api.updatePlacement.mock.calls[1][2] as {
+        laneId: number;
+        fuzzyPeriodStart: string;
+        fuzzyPeriodEnd: string;
+      };
+
+      // The SECOND (newer) request's response arrives FIRST (network reordering).
+      responses[1].next({ ...INITIATIVE_A, ...secondRequestBody });
+      // The FIRST (now-superseded) request's response arrives LAST — must be a no-op, not undo
+      // the second response's result.
+      responses[0].next({ ...INITIATIVE_A, ...firstRequestBody });
+      fixture.detectChanges();
+
+      // Final rendered position reflects the SECOND (Q3, axis index 2) response, not the
+      // first's (Q2, index 1) — pixel position is asserted rather than text, since the bar's
+      // aria-label isn't interpolated under TranslocoTestingModule's stub.
+      expect(bar.style.left).toBe(`${QUARTER_WIDTH_PX * 2}px`);
     });
   });
 });

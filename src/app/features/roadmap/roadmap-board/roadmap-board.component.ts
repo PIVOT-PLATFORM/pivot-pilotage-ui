@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { forkJoin } from 'rxjs';
 import { RoadmapApiService } from '../data-access/roadmap-api.service';
 import {
@@ -66,6 +66,7 @@ export class RoadmapBoardComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly roadmapApi = inject(RoadmapApiService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly transloco = inject(TranslocoService);
 
   protected readonly quarterWidthPx = QUARTER_WIDTH_PX;
   protected readonly quarters: readonly QuarterCell[] = buildQuarterAxis(new Date());
@@ -93,6 +94,13 @@ export class RoadmapBoardComponent implements OnInit {
   /** Last placement outcome, announced via an `aria-live="polite"` region (A11y AC). */
   protected readonly announcement = signal<string | null>(null);
 
+  /**
+   * One in-flight-request token per initiative id — guards `onPlacementChange` against an
+   * out-of-order response (e.g. two rapid keyboard nudges on the same bar) silently clobbering a
+   * newer optimistic update/rollback with an older, now-superseded one. See that method's TSDoc.
+   */
+  private readonly pendingPlacementTokens = new Map<number, symbol>();
+
   private readonly projectRef: RoadmapProjectRef = this.readProjectRef();
 
   private readProjectRef(): RoadmapProjectRef {
@@ -106,10 +114,6 @@ export class RoadmapBoardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadRoadmap();
-  }
-
-  protected initiativesForLane(laneId: number): Initiative[] {
-    return this.initiatives().filter(initiative => initiative.laneId === laneId);
   }
 
   protected retryLoad(): void {
@@ -250,14 +254,31 @@ export class RoadmapBoardComponent implements OnInit {
     return 'roadmap.board.createInitiative.errors.GENERIC';
   }
 
-  /** See class TSDoc — optimistic update, rollback on failure. */
+  /**
+   * See class TSDoc — optimistic update, rollback on failure.
+   *
+   * **Staleness guard.** `previous` is re-read from the live `initiatives` signal (never trusted
+   * from the `@for`-bound `initiative` parameter, which can be a stale reference by the time this
+   * handler runs) and each call stamps a fresh token into {@link pendingPlacementTokens} for this
+   * initiative id. If a second placement change fires on the *same* initiative before the first
+   * one's HTTP response arrives (e.g. two rapid keyboard nudges, or a keyboard nudge racing a
+   * mouse drop), the first response's `next`/`error` callback finds its token superseded and
+   * no-ops instead of clobbering the second, more recent change with stale data.
+   */
   protected onPlacementChange(initiative: Initiative, change: InitiativePlacementChange): void {
-    const previous = initiative;
-    const optimistic: Initiative = { ...initiative, ...change };
+    const previous = this.initiatives().find(i => i.id === initiative.id) ?? initiative;
+    const optimistic: Initiative = { ...previous, ...change };
+    const token = Symbol();
+    this.pendingPlacementTokens.set(initiative.id, token);
+
     this.placementErrorKey.set(null);
     this.initiatives.update(list => list.map(i => (i.id === initiative.id ? optimistic : i)));
     this.announcement.set(
-      `${initiative.name}: ${change.fuzzyPeriodStart} → ${change.fuzzyPeriodEnd}`,
+      this.transloco.translate('roadmap.board.bar.announceMoved', {
+        name: previous.name,
+        start: change.fuzzyPeriodStart,
+        end: change.fuzzyPeriodEnd,
+      }),
     );
 
     this.roadmapApi
@@ -265,11 +286,22 @@ export class RoadmapBoardComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: updated => {
+          if (this.pendingPlacementTokens.get(initiative.id) !== token) {
+            return; // superseded by a more recent placement change on this initiative
+          }
           this.initiatives.update(list => list.map(i => (i.id === initiative.id ? updated : i)));
         },
         error: (error: HttpErrorResponse) => {
+          if (this.pendingPlacementTokens.get(initiative.id) !== token) {
+            return; // superseded — a newer change already owns this initiative's outcome
+          }
           this.initiatives.update(list => list.map(i => (i.id === initiative.id ? previous : i)));
           this.placementErrorKey.set(this.resolvePlacementErrorKey(error));
+          // A11y — the earlier "moved" announcement must be corrected, not left standing, so a
+          // screen-reader user isn't told a move succeeded when it was actually reverted.
+          this.announcement.set(
+            this.transloco.translate('roadmap.board.bar.announceReverted', { name: previous.name }),
+          );
         },
       });
   }

@@ -48,7 +48,9 @@
         }
       },
       "bar": {
-        "ariaLabel": "Initiative {{name}}, {{period}}. Flèches pour déplacer, Maj + flèches pour redimensionner, haut/bas pour changer de lane."
+        "ariaLabel": "Initiative {{name}}, {{period}}. Flèches pour déplacer, Maj + flèches pour redimensionner, haut/bas pour changer de lane.",
+        "announceMoved": "{{name}} déplacée : {{start}} → {{end}}.",
+        "announceReverted": "{{name}} : déplacement annulé, une erreur est survenue."
       }
     }
   }
