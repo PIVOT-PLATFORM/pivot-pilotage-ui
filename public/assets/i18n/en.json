@@ -641,5 +641,21 @@
         "GENERIC": "Could not resolve the effective calendar."
       }
     }
+  },
+  "portfolio": {
+    "weather": {
+      "status": {
+        "SUNNY": "Sunny",
+        "CLOUDY": "Cloudy",
+        "STORMY": "Stormy",
+        "INDETERMINATE": "Indeterminate"
+      },
+      "varianceLabel": "{{value}} pts vs. plan",
+      "indeterminateReason": {
+        "MISSING_STATUS_DATE": "No status date set for this project yet.",
+        "MISSING_WINDOW": "No task dates available to derive a schedule window.",
+        "MISSING_PROGRESS": "No task progress recorded yet."
+      }
+    }
   }
 }

@@ -1,0 +1,50 @@
+.weather-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px 2px 6px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+
+  // Distinct shape (icon, see template) + visible text label — never color alone (A11y AC
+  // "sans dépendre uniquement de la couleur"). Contraste texte blanc / fond vérifié WCAG 2.1 AA
+  // pour chaque modificateur ci-dessous (>= 4.5:1 requis).
+  &--sunny {
+    // ~6.53:1
+    background: #146c2e;
+  }
+
+  &--cloudy {
+    // ~5.72:1 — même couleur que MilestoneMarkerComponent (accent "attention").
+    background: #a34f00;
+  }
+
+  &--stormy {
+    // ~6.53:1 — même couleur que les messages d'erreur du repo (ex. CalendarManagerComponent).
+    background: #b3261e;
+  }
+
+  &--indeterminate {
+    // ~6.05:1
+    background: #5f6368;
+  }
+}
+
+.weather-indicator__icon {
+  flex: none;
+  fill: currentcolor;
+}
+
+.weather-indicator__label {
+  flex: none;
+}
+
+.weather-indicator__variance,
+.weather-indicator__reason {
+  flex: none;
+  font-weight: 400;
+  opacity: 0.9;
+}

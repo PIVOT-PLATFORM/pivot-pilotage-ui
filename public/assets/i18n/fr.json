@@ -641,5 +641,21 @@
         "GENERIC": "Impossible de résoudre le calendrier effectif."
       }
     }
+  },
+  "portfolio": {
+    "weather": {
+      "status": {
+        "SUNNY": "Beau temps",
+        "CLOUDY": "Nuageux",
+        "STORMY": "Orageux",
+        "INDETERMINATE": "Indéterminé"
+      },
+      "varianceLabel": "{{value}} pts vs. prévu",
+      "indeterminateReason": {
+        "MISSING_STATUS_DATE": "Aucune date de fraîcheur renseignée pour ce projet.",
+        "MISSING_WINDOW": "Aucune date de tâche disponible pour déterminer une fenêtre planifiée.",
+        "MISSING_PROGRESS": "Aucun avancement de tâche enregistré pour l'instant."
+      }
+    }
   }
 }
