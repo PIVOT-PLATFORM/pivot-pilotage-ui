@@ -1,0 +1,93 @@
+<div class="task-constraint">
+  <h2 class="task-constraint__title">{{ 'gantt.taskConstraint.title' | transloco }}</h2>
+
+  <p class="task-constraint__sr-only" aria-live="polite">{{ announcement() }}</p>
+
+  @if (loading()) {
+    <p class="task-constraint__status" role="status">{{ 'gantt.taskConstraint.loading' | transloco }}</p>
+  } @else if (loadErrorKey()) {
+    <div class="task-constraint__status task-constraint__status--error" role="alert">
+      <p>{{ loadErrorKey()! | transloco }}</p>
+      <button type="button" (click)="retryLoad()">{{ 'gantt.taskConstraint.retry' | transloco }}</button>
+    </div>
+  } @else {
+    <!-- AC1/AC2/Error AC — the engine's live warnings (CONSTRAINT_CONFLICT/DEADLINE_MISSED/…), never
+         computed here. `aria-live="polite"` so an appearing/clearing warning is announced (A11y AC);
+         each entry pairs a decorative icon with a translated label + the backend's own detail
+         sentence — never colour alone. -->
+    <section class="task-constraint__warnings" aria-live="polite" aria-atomic="true">
+      @if (constraint(); as current) {
+        @if (current.warnings.length > 0) {
+          <ul class="task-constraint__warnings-list">
+            @for (warning of current.warnings; track warning.type + warning.detail) {
+              <li class="task-constraint__warning task-constraint__warning--{{ warning.type }}">
+                <span class="task-constraint__warning-icon" aria-hidden="true">{{ warningIcon(warning.type) }}</span>
+                <span class="task-constraint__warning-text">
+                  <strong>{{ ('gantt.taskConstraint.warnings.' + warning.type) | transloco }}</strong>
+                  — {{ warning.detail }}
+                </span>
+              </li>
+            }
+          </ul>
+        }
+      }
+    </section>
+
+    <form class="task-constraint__form" (submit)="$event.preventDefault(); submit()">
+      <div class="task-constraint__field">
+        <label for="task-constraint-type">{{ 'gantt.taskConstraint.form.typeLabel' | transloco }}</label>
+        <!-- `[selected]` on each <option> rather than `[value]` on the <select> itself: the latter
+             races against the @for-generated <option> children on first render (the select's own
+             value-property update can run before its options exist in the DOM, so the browser
+             silently falls back to the first option) — binding `[selected]` per-option applies with
+             that option's own creation, so a non-first initial constraint type (the common case) is
+             correctly pre-selected. -->
+        <select id="task-constraint-type" (change)="onTypeChange($event)">
+          @for (type of constraintTypes; track type) {
+            <option [value]="type" [selected]="type === typeInput()">{{ ('gantt.taskConstraint.type.' + type) | transloco }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="task-constraint__field">
+        <label for="task-constraint-date">{{ 'gantt.taskConstraint.form.dateLabel' | transloco }}</label>
+        <input
+          id="task-constraint-date"
+          type="datetime-local"
+          [value]="dateInput()"
+          [disabled]="isDateless()"
+          (input)="onDateInput($event)"
+          [attr.aria-invalid]="saveErrorKey() ? true : null"
+          [attr.aria-describedby]="saveErrorKey() ? 'task-constraint-error' : 'task-constraint-date-hint'"
+        />
+        <p id="task-constraint-date-hint" class="task-constraint__hint">
+          {{
+            (isDateless() ? 'gantt.taskConstraint.form.dateHintDateless' : 'gantt.taskConstraint.form.dateHint')
+              | transloco
+          }}
+        </p>
+      </div>
+
+      <div class="task-constraint__field">
+        <label for="task-constraint-deadline">{{ 'gantt.taskConstraint.form.deadlineLabel' | transloco }}</label>
+        <input
+          id="task-constraint-deadline"
+          type="datetime-local"
+          [value]="deadlineInput()"
+          (input)="onDeadlineInput($event)"
+          [attr.aria-invalid]="saveErrorKey() ? true : null"
+          [attr.aria-describedby]="saveErrorKey() ? 'task-constraint-error' : 'task-constraint-deadline-hint'"
+        />
+        <p id="task-constraint-deadline-hint" class="task-constraint__hint">
+          {{ 'gantt.taskConstraint.form.deadlineHint' | transloco }}
+        </p>
+      </div>
+
+      <button type="submit" [disabled]="saving()">{{ 'gantt.taskConstraint.form.submit' | transloco }}</button>
+
+      @if (saveErrorKey()) {
+        <p id="task-constraint-error" class="task-constraint__error" role="alert">{{ saveErrorKey()! | transloco }}</p>
+      }
+    </form>
+  }
+</div>
