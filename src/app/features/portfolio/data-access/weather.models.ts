@@ -1,8 +1,11 @@
 /**
  * Domain models mirroring `pivot-pilotage-core`'s weather contract (US23.2.4 — "Météo et
  * indicateurs normalisés"). Authoritative backend contract (service signatures, DTOs, thresholds,
- * error semantics): `pivot-docs/docs/specs/EPIC-portefeuille/us23-2-4-meteo-indicateurs-normalises.md`
- * (Gate 5, frozen from `pivot-pilotage-core` PR #57, package `fr.pivot.pilotage.weather`).
+ * error semantics): `pivot-pilotage-core` PR #57 (package `fr.pivot.pilotage.weather`, merged) —
+ * being written up as a frozen Gate 5 spec at
+ * `pivot-docs/docs/specs/EPIC-portefeuille/us23-2-4-meteo-indicateurs-normalises.md`
+ * (`pivot-docs` PR #234, pending merge at the time of writing; the merged backend PR itself is
+ * already the authoritative source either way).
  *
  * **Known platform gap — no REST controller exists yet, unlike every other feature already
  * shipped in this repo.** `RoadmapController`/`WbsTaskController`/`CalendarController` all exist
