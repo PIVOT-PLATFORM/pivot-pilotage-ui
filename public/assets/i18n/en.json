@@ -483,6 +483,97 @@
         "ruleLabel": "Recurrence rule: {{rule}}",
         "occurrencesAriaLabel": "Generated occurrences"
       }
+    },
+    "baselines": {
+      "title": "Baselines & variance analysis",
+      "loading": "Loading baselines…",
+      "retry": "Retry",
+      "notAvailable": "—",
+      "taskRemoved": "Removed task",
+      "precisionChanged": "The temporal precision changed since capture — read this variance with that context.",
+      "precisionChangedShort": "precision changed",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "This project could not be found, or you do not have access to it.",
+          "GENERIC": "Could not load the baselines."
+        }
+      },
+      "slotLabel": {
+        "base": "Baseline",
+        "numbered": "Baseline {{n}}"
+      },
+      "pose": {
+        "title": "Set a baseline",
+        "indexLabel": "Slot (0 to 10, optional)",
+        "indexPlaceholder": "Automatic (lowest free slot)",
+        "submit": "Set the baseline",
+        "hintAtLimit": "All 11 slots are in use — overwrite or delete an existing baseline before setting a new one.",
+        "announceCreated": "Baseline set: {{label}} ({{count}} task(s)).",
+        "announceOverwritten": "Baseline overwritten: {{label}} ({{count}} task(s)).",
+        "errors": {
+          "INVALID_INDEX": "The slot must be an integer between 0 and 10.",
+          "INVALID_BASELINE_INDEX": "This baseline slot was rejected by the server (0 to 10 expected).",
+          "BASELINE_LIMIT_EXCEEDED": "All 11 possible baselines are already in use — overwrite or delete one before setting a new one.",
+          "FORBIDDEN": "You do not have the rights to set a baseline on this project (PMO or project lead role required).",
+          "NOT_FOUND": "This project could not be found, or you do not have access to it.",
+          "GENERIC": "Could not set the baseline."
+        }
+      },
+      "list": {
+        "title": "Baselines set",
+        "empty": "No baseline has been set yet.",
+        "columns": {
+          "index": "Baseline",
+          "capturedAt": "Captured on",
+          "taskCount": "Frozen tasks",
+          "actions": "Actions"
+        }
+      },
+      "delete": {
+        "button": "Delete",
+        "confirmPrompt": "Confirm deletion of {{label}}?",
+        "confirmButton": "Yes, delete",
+        "cancelButton": "Cancel",
+        "announceDeleted": "Baseline deleted: {{label}}.",
+        "errors": {
+          "FORBIDDEN": "You do not have the rights to delete this baseline (PMO or project lead role required).",
+          "NOT_FOUND": "This baseline could not be found.",
+          "GENERIC": "Could not delete the baseline."
+        }
+      },
+      "variance": {
+        "title": "Variance vs baseline (planned / actual)",
+        "selectLabel": "Baseline to compare against the current plan",
+        "selectPlaceholder": "Choose a baseline…",
+        "loading": "Loading variance…",
+        "empty": "No task in this baseline.",
+        "columns": {
+          "task": "Task",
+          "start": "Start (baseline → actual)",
+          "finish": "Finish (baseline → actual)",
+          "duration": "Duration (baseline → actual)",
+          "work": "Work (baseline → actual)",
+          "cost": "Cost (baseline → actual)"
+        },
+        "errors": {
+          "NOT_FOUND": "This baseline could not be found.",
+          "GENERIC": "Could not load the variance."
+        }
+      },
+      "compare": {
+        "title": "Compare two baselines",
+        "fromLabel": "Reference baseline",
+        "toLabel": "Compared baseline",
+        "submit": "Compare",
+        "loading": "Loading the comparison…",
+        "empty": "No task to compare.",
+        "errors": {
+          "SELECT_TWO": "Choose two baselines to compare.",
+          "SAME_INDEX": "Choose two different baselines.",
+          "NOT_FOUND": "One of the compared baselines could not be found.",
+          "GENERIC": "Could not compare the baselines."
+        }
+      }
     }
   },
   "calendar": {
