@@ -44,6 +44,12 @@ import { Routes } from '@angular/router';
  * Chemins identiques aux segments d'URL exposés par `pivot-pilotage-core`'s
  * `CalendarController` (même gap-era `tenantId`/`teamId` en path — voir
  * `CalendarTeamRef`/`CalendarTaskRef` TSDoc), même posture que la roadmap ci-dessus.
+ *
+ * `.../projects/:projectId/gantt/tasks/:taskId/scheduling` — US22.4.2 (durées, effort,
+ * planification auto vs manuelle), quatrième route du Gantt détaillé (F22.4) livrée en parallèle
+ * sur ce sprint. Chemin identique aux segments exposés par `pivot-pilotage-core`'s
+ * `WbsTaskController` (`.../gantt/tasks/{taskId}/duration|effort|scheduling-mode`, PR #49), même
+ * gap-era `tenantId`/`teamId`/`projectId` en path — voir `TaskSchedulingProjectRef` TSDoc.
  */
 export const routes: Routes = [
   {
@@ -84,5 +90,10 @@ export const routes: Routes = [
   {
     path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tree',
     loadComponent: () => import('./features/gantt/wbs-tree/wbs-tree.component').then((m) => m.WbsTreeComponent),
+  },
+  {
+    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tasks/:taskId/scheduling',
+    loadComponent: () =>
+      import('./features/gantt/task-scheduling/task-scheduling.component').then((m) => m.TaskSchedulingComponent),
   },
 ];

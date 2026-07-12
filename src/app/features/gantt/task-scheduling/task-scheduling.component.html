@@ -1,0 +1,130 @@
+<div class="task-scheduling">
+  <h2 class="task-scheduling__title">{{ 'gantt.taskScheduling.title' | transloco }}</h2>
+
+  <p class="task-scheduling__sr-only" aria-live="polite">{{ announcement() }}</p>
+
+  @if (loading()) {
+    <p class="task-scheduling__status" role="status">{{ 'gantt.taskScheduling.loading' | transloco }}</p>
+  } @else if (loadErrorKey()) {
+    <div class="task-scheduling__status task-scheduling__status--error" role="alert">
+      <p>{{ loadErrorKey()! | transloco }}</p>
+      <button type="button" (click)="retryLoad()">{{ 'gantt.taskScheduling.retry' | transloco }}</button>
+    </div>
+  } @else if (node(); as currentNode) {
+    <div class="task-scheduling__context">
+      <span class="task-scheduling__wbs-code">{{ currentNode.wbsCode }}</span>
+      <span class="task-scheduling__name">{{ currentNode.name }}</span>
+      <span class="task-scheduling__node-kind">{{ ('gantt.wbsTree.nodeKind.' + currentNode.nodeKind) | transloco }}</span>
+    </div>
+
+    @if (isSummary()) {
+      <p class="task-scheduling__readonly-badge" role="note">
+        {{ 'gantt.taskScheduling.readOnlyBadge' | transloco }}
+      </p>
+      <dl class="task-scheduling__derived">
+        <dt>{{ 'gantt.taskScheduling.duration.label' | transloco }}</dt>
+        <dd>{{ currentNode.durationMinutes ?? ('gantt.taskScheduling.unknownValue' | transloco) }}</dd>
+      </dl>
+    } @else {
+      <!-- Duration form -->
+      <form class="task-scheduling__form" (submit)="$event.preventDefault(); submitDuration()">
+        <div class="task-scheduling__field">
+          <label for="task-scheduling-duration">{{ 'gantt.taskScheduling.duration.label' | transloco }}</label>
+          <input
+            id="task-scheduling-duration"
+            type="number"
+            step="1"
+            min="0"
+            [value]="durationInput()"
+            (input)="onDurationInput($event)"
+            [attr.aria-invalid]="durationErrorKey() ? true : null"
+            [attr.aria-describedby]="durationErrorKey() ? 'task-scheduling-duration-error' : 'task-scheduling-duration-hint'"
+          />
+          <p id="task-scheduling-duration-hint" class="task-scheduling__hint">
+            {{ (isMilestone() ? 'gantt.taskScheduling.duration.hintMilestone' : 'gantt.taskScheduling.duration.hint') | transloco }}
+          </p>
+        </div>
+        <button type="submit" [disabled]="savingDuration()">{{ 'gantt.taskScheduling.duration.submit' | transloco }}</button>
+        @if (durationErrorKey()) {
+          <p id="task-scheduling-duration-error" class="task-scheduling__error" role="alert">{{ durationErrorKey()! | transloco }}</p>
+        }
+      </form>
+
+      <!-- Effort form -->
+      <form class="task-scheduling__form" (submit)="$event.preventDefault(); submitEffort()">
+        <div class="task-scheduling__field">
+          <label for="task-scheduling-resource-ref">{{ 'gantt.taskScheduling.effort.resourceRefLabel' | transloco }}</label>
+          <input
+            id="task-scheduling-resource-ref"
+            type="text"
+            [value]="resourceRefInput()"
+            (input)="onResourceRefInput($event)"
+          />
+        </div>
+        <div class="task-scheduling__field">
+          <label for="task-scheduling-units">{{ 'gantt.taskScheduling.effort.unitsLabel' | transloco }}</label>
+          <input
+            id="task-scheduling-units"
+            type="number"
+            step="1"
+            min="1"
+            [value]="unitsPercentInput()"
+            (input)="onUnitsPercentInput($event)"
+            [attr.aria-invalid]="effortErrorKey() ? true : null"
+            [attr.aria-describedby]="effortErrorKey() ? 'task-scheduling-effort-error' : null"
+          />
+        </div>
+        <button type="submit" [disabled]="savingEffort()">{{ 'gantt.taskScheduling.effort.submit' | transloco }}</button>
+        @if (effortErrorKey()) {
+          <p id="task-scheduling-effort-error" class="task-scheduling__error" role="alert">{{ effortErrorKey()! | transloco }}</p>
+        }
+      </form>
+
+      <!-- Scheduling-mode toggle -->
+      <div class="task-scheduling__mode" role="group" [attr.aria-label]="'gantt.taskScheduling.mode.groupLabel' | transloco">
+        <button
+          type="button"
+          [attr.aria-pressed]="isMode('AUTO')"
+          [disabled]="savingMode()"
+          (click)="setSchedulingMode('AUTO')"
+        >
+          {{ 'gantt.taskScheduling.mode.AUTO' | transloco }}
+        </button>
+        <button
+          type="button"
+          [attr.aria-pressed]="isMode('MANUAL')"
+          [disabled]="savingMode()"
+          (click)="setSchedulingMode('MANUAL')"
+        >
+          {{ 'gantt.taskScheduling.mode.MANUAL' | transloco }}
+        </button>
+        @if (modeErrorKey()) {
+          <p class="task-scheduling__error" role="alert">{{ modeErrorKey()! | transloco }}</p>
+        }
+      </div>
+
+      <!-- Derived, read-only, engine-owned fields -->
+      <dl class="task-scheduling__derived" [attr.aria-readonly]="true">
+        <dt>{{ 'gantt.taskScheduling.derived.workLabel' | transloco }}</dt>
+        <dd>{{ scheduling()?.workMinutes ?? ('gantt.taskScheduling.unknownValue' | transloco) }}</dd>
+
+        <dt>{{ 'gantt.taskScheduling.derived.startLabel' | transloco }}</dt>
+        <dd>{{ formatDate(scheduling()?.startDate) }}</dd>
+
+        <dt>{{ 'gantt.taskScheduling.derived.finishLabel' | transloco }}</dt>
+        <dd>{{ formatDate(scheduling()?.finishDate) }}</dd>
+
+        @if (scheduling()?.effectiveMode === 'MANUAL') {
+          <dt>{{ 'gantt.taskScheduling.derived.plannedManualLabel' | transloco }}</dt>
+          <dd>{{ formatDate(scheduling()?.plannedManual) }}</dd>
+
+          <dt>{{ 'gantt.taskScheduling.derived.wouldBeAutoLabel' | transloco }}</dt>
+          <dd>{{ formatDate(scheduling()?.wouldBeAuto) }}</dd>
+
+          <dt>{{ 'gantt.taskScheduling.derived.deltaLabel' | transloco }}</dt>
+          <dd>{{ scheduling()?.deltaMinutes ?? 0 }}</dd>
+        }
+      </dl>
+    }
+  }
+</div>

@@ -318,6 +318,72 @@
           "GENERIC": "Could not update the plan structure."
         }
       }
+    },
+    "taskScheduling": {
+      "title": "Duration, effort & scheduling",
+      "loading": "Loading the task's scheduling data…",
+      "retry": "Retry",
+      "unknownValue": "Not yet known",
+      "readOnlyBadge": "Read-only — a summary task's duration is derived from its sub-tasks",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "This project or task could not be found, or you don't have access to it.",
+          "GENERIC": "Could not load the task's scheduling data."
+        }
+      },
+      "duration": {
+        "label": "Duration (worked minutes)",
+        "hint": "Must be a positive whole number of worked minutes.",
+        "hintMilestone": "This task is a milestone — zero is allowed.",
+        "submit": "Save duration",
+        "announceUpdated": "Duration updated: {{minutes}} worked minutes.",
+        "errors": {
+          "REQUIRED": "The duration is required.",
+          "NOT_A_NUMBER": "The duration must be a whole number of minutes.",
+          "NEGATIVE": "The duration cannot be negative.",
+          "ZERO_NON_MILESTONE": "Only a milestone may have a zero duration.",
+          "INVALID_TASK_EFFORT": "This duration was rejected by the server — it must be a positive number, or zero only for a milestone.",
+          "FORBIDDEN": "You don't have permission to change this task's duration.",
+          "NOT_FOUND": "This project or task could not be found.",
+          "GENERIC": "Could not update the duration."
+        }
+      },
+      "effort": {
+        "resourceRefLabel": "Resource reference",
+        "unitsLabel": "Units (%)",
+        "submit": "Save effort",
+        "announceUpdated": "Effort updated for {{resourceRef}}: {{units}}% — {{work}} worked minutes of planned work.",
+        "errors": {
+          "RESOURCE_REQUIRED": "A resource reference is required.",
+          "UNITS_REQUIRED": "The units value is required.",
+          "NOT_A_NUMBER": "The units value must be a number.",
+          "NON_POSITIVE": "The units value must be strictly positive.",
+          "INVALID_TASK_EFFORT": "These units were rejected by the server — they must be strictly positive.",
+          "FORBIDDEN": "You don't have permission to change this task's effort.",
+          "NOT_FOUND": "This project or task could not be found.",
+          "GENERIC": "Could not update the effort."
+        }
+      },
+      "mode": {
+        "groupLabel": "Scheduling mode",
+        "AUTO": "Automatic",
+        "MANUAL": "Manual",
+        "announceChanged": "Scheduling mode set to: {{mode}}.",
+        "announceManualWithVariance": "Scheduling mode set to manual — variance versus automatic scheduling: {{deltaMinutes}} minutes.",
+        "errors": {
+          "FORBIDDEN": "You don't have permission to change this task's scheduling mode.",
+          "NOT_FOUND": "This project or task could not be found.",
+          "GENERIC": "Could not update the scheduling mode."
+        }
+      },
+      "derived": {
+        "workLabel": "Total planned work (derived, read-only)",
+        "startLabel": "Start date (derived, read-only)",
+        "finishLabel": "Finish date (derived, read-only)",
+        "plannedManualLabel": "Manually pinned start (read-only)",
+        "wouldBeAutoLabel": "Start the engine would compute in automatic mode (read-only)",
+        "deltaLabel": "Variance versus automatic (worked minutes)"
+      }
     }
   },
   "calendar": {

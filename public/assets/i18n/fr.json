@@ -318,6 +318,72 @@
           "GENERIC": "Impossible de mettre à jour la structure du plan."
         }
       }
+    },
+    "taskScheduling": {
+      "title": "Durée, effort & planification",
+      "loading": "Chargement des données de planification de la tâche…",
+      "retry": "Réessayer",
+      "unknownValue": "Pas encore connu",
+      "readOnlyBadge": "Lecture seule — la durée d'une tâche récapitulative est dérivée de ses sous-tâches",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "Ce projet ou cette tâche est introuvable, ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de charger les données de planification de la tâche."
+        }
+      },
+      "duration": {
+        "label": "Durée (minutes ouvrées)",
+        "hint": "Doit être un nombre entier positif de minutes ouvrées.",
+        "hintMilestone": "Cette tâche est un jalon — zéro est autorisé.",
+        "submit": "Enregistrer la durée",
+        "announceUpdated": "Durée mise à jour : {{minutes}} minutes ouvrées.",
+        "errors": {
+          "REQUIRED": "La durée est requise.",
+          "NOT_A_NUMBER": "La durée doit être un nombre entier de minutes.",
+          "NEGATIVE": "La durée ne peut pas être négative.",
+          "ZERO_NON_MILESTONE": "Seul un jalon peut avoir une durée nulle.",
+          "INVALID_TASK_EFFORT": "Cette durée a été rejetée par le serveur — elle doit être positive, ou nulle uniquement pour un jalon.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour modifier la durée de cette tâche.",
+          "NOT_FOUND": "Ce projet ou cette tâche est introuvable.",
+          "GENERIC": "Impossible de mettre à jour la durée."
+        }
+      },
+      "effort": {
+        "resourceRefLabel": "Référence de la ressource",
+        "unitsLabel": "Unités (%)",
+        "submit": "Enregistrer l'effort",
+        "announceUpdated": "Effort mis à jour pour {{resourceRef}} : {{units}}% — {{work}} minutes ouvrées de travail planifié.",
+        "errors": {
+          "RESOURCE_REQUIRED": "Une référence de ressource est requise.",
+          "UNITS_REQUIRED": "La valeur des unités est requise.",
+          "NOT_A_NUMBER": "La valeur des unités doit être un nombre.",
+          "NON_POSITIVE": "La valeur des unités doit être strictement positive.",
+          "INVALID_TASK_EFFORT": "Ces unités ont été rejetées par le serveur — elles doivent être strictement positives.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour modifier l'effort de cette tâche.",
+          "NOT_FOUND": "Ce projet ou cette tâche est introuvable.",
+          "GENERIC": "Impossible de mettre à jour l'effort."
+        }
+      },
+      "mode": {
+        "groupLabel": "Mode de planification",
+        "AUTO": "Automatique",
+        "MANUAL": "Manuel",
+        "announceChanged": "Mode de planification réglé sur : {{mode}}.",
+        "announceManualWithVariance": "Mode de planification réglé sur manuel — écart par rapport à la planification automatique : {{deltaMinutes}} minutes.",
+        "errors": {
+          "FORBIDDEN": "Vous n'avez pas les droits pour modifier le mode de planification de cette tâche.",
+          "NOT_FOUND": "Ce projet ou cette tâche est introuvable.",
+          "GENERIC": "Impossible de mettre à jour le mode de planification."
+        }
+      },
+      "derived": {
+        "workLabel": "Travail total planifié (dérivé, lecture seule)",
+        "startLabel": "Date de début (dérivée, lecture seule)",
+        "finishLabel": "Date de fin (dérivée, lecture seule)",
+        "plannedManualLabel": "Début figé manuellement (lecture seule)",
+        "wouldBeAutoLabel": "Début que le moteur calculerait en mode automatique (lecture seule)",
+        "deltaLabel": "Écart par rapport à l'automatique (minutes ouvrées)"
+      }
     }
   },
   "calendar": {
