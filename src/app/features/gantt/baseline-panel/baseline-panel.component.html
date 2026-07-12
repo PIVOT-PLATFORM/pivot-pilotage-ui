@@ -140,7 +140,9 @@
                     [class.baseline-panel__cell--behind]="(row.startVarianceMinutes ?? 0) > 0"
                     [class.baseline-panel__cell--ahead]="(row.startVarianceMinutes ?? 0) < 0"
                   >
-                    <span class="baseline-panel__cell-value">{{ formatDate(row.baselineStart) }} → {{ formatDate(row.currentStart) }}</span>
+                    <span class="baseline-panel__cell-value">{{
+                      'gantt.baselines.variance.rangeValue' | transloco: { from: formatDate(row.baselineStart), to: formatDate(row.currentStart) }
+                    }}</span>
                     <span class="baseline-panel__cell-label">{{ row.startVarianceLabel }}</span>
                   </td>
                   <td
@@ -148,7 +150,9 @@
                     [class.baseline-panel__cell--behind]="(row.finishVarianceMinutes ?? 0) > 0"
                     [class.baseline-panel__cell--ahead]="(row.finishVarianceMinutes ?? 0) < 0"
                   >
-                    <span class="baseline-panel__cell-value">{{ formatDate(row.baselineFinish) }} → {{ formatDate(row.currentFinish) }}</span>
+                    <span class="baseline-panel__cell-value">{{
+                      'gantt.baselines.variance.rangeValue' | transloco: { from: formatDate(row.baselineFinish), to: formatDate(row.currentFinish) }
+                    }}</span>
                     <span class="baseline-panel__cell-label">{{ row.finishVarianceLabel }}</span>
                   </td>
                   <td
@@ -156,7 +160,9 @@
                     [class.baseline-panel__cell--behind]="(row.durationVarianceMinutes ?? 0) > 0"
                     [class.baseline-panel__cell--ahead]="(row.durationVarianceMinutes ?? 0) < 0"
                   >
-                    <span class="baseline-panel__cell-value">{{ formatNumber(row.baselineDurationMinutes) }} → {{ formatNumber(row.currentDurationMinutes) }} min</span>
+                    <span class="baseline-panel__cell-value">{{
+                      'gantt.baselines.variance.minutesRangeValue' | transloco: { from: formatNumber(row.baselineDurationMinutes), to: formatNumber(row.currentDurationMinutes) }
+                    }}</span>
                     <span class="baseline-panel__cell-label">{{ row.durationVarianceLabel }}</span>
                   </td>
                   <td
@@ -164,7 +170,9 @@
                     [class.baseline-panel__cell--behind]="(row.workVarianceMinutes ?? 0) > 0"
                     [class.baseline-panel__cell--ahead]="(row.workVarianceMinutes ?? 0) < 0"
                   >
-                    <span class="baseline-panel__cell-value">{{ formatNumber(row.baselineWorkMinutes) }} → {{ formatNumber(row.currentWorkMinutes) }} min</span>
+                    <span class="baseline-panel__cell-value">{{
+                      'gantt.baselines.variance.minutesRangeValue' | transloco: { from: formatNumber(row.baselineWorkMinutes), to: formatNumber(row.currentWorkMinutes) }
+                    }}</span>
                     <span class="baseline-panel__cell-label">{{ row.workVarianceLabel }}</span>
                   </td>
                   <td
@@ -172,7 +180,9 @@
                     [class.baseline-panel__cell--behind]="(row.costVarianceAmount ?? 0) > 0"
                     [class.baseline-panel__cell--ahead]="(row.costVarianceAmount ?? 0) < 0"
                   >
-                    <span class="baseline-panel__cell-value">{{ formatNumber(row.baselineCostAmount) }} → {{ formatNumber(row.currentCostAmount) }}</span>
+                    <span class="baseline-panel__cell-value">{{
+                      'gantt.baselines.variance.rangeValue' | transloco: { from: formatNumber(row.baselineCostAmount), to: formatNumber(row.currentCostAmount) }
+                    }}</span>
                     <span class="baseline-panel__cell-label">{{ row.costVarianceLabel }}</span>
                   </td>
                 </tr>
@@ -223,7 +233,7 @@
         } @else {
           <table class="baseline-panel__table baseline-panel__table--variance">
             <caption class="baseline-panel__sr-only">
-              {{ baselineLabel(report.fromIndex) }} → {{ baselineLabel(report.toIndex) }}
+              {{ 'gantt.baselines.variance.rangeValue' | transloco: { from: baselineLabel(report.fromIndex), to: baselineLabel(report.toIndex) } }}
             </caption>
             <thead>
               <tr>
@@ -244,7 +254,9 @@
                     [class.baseline-panel__cell--behind]="(row.startDeltaMinutes ?? 0) > 0"
                     [class.baseline-panel__cell--ahead]="(row.startDeltaMinutes ?? 0) < 0"
                   >
-                    <span class="baseline-panel__cell-value">{{ formatDate(row.fromStart) }} → {{ formatDate(row.toStart) }}</span>
+                    <span class="baseline-panel__cell-value">{{
+                      'gantt.baselines.variance.rangeValue' | transloco: { from: formatDate(row.fromStart), to: formatDate(row.toStart) }
+                    }}</span>
                     <span class="baseline-panel__cell-label">{{ row.startDeltaLabel }}</span>
                   </td>
                   <td
@@ -252,7 +264,9 @@
                     [class.baseline-panel__cell--behind]="(row.finishDeltaMinutes ?? 0) > 0"
                     [class.baseline-panel__cell--ahead]="(row.finishDeltaMinutes ?? 0) < 0"
                   >
-                    <span class="baseline-panel__cell-value">{{ formatDate(row.fromFinish) }} → {{ formatDate(row.toFinish) }}</span>
+                    <span class="baseline-panel__cell-value">{{
+                      'gantt.baselines.variance.rangeValue' | transloco: { from: formatDate(row.fromFinish), to: formatDate(row.toFinish) }
+                    }}</span>
                     <span class="baseline-panel__cell-label">{{ row.finishDeltaLabel }}</span>
                   </td>
                   <td
@@ -260,7 +274,9 @@
                     [class.baseline-panel__cell--behind]="(row.durationDeltaMinutes ?? 0) > 0"
                     [class.baseline-panel__cell--ahead]="(row.durationDeltaMinutes ?? 0) < 0"
                   >
-                    <span class="baseline-panel__cell-value">{{ formatNumber(row.fromDurationMinutes) }} → {{ formatNumber(row.toDurationMinutes) }} min</span>
+                    <span class="baseline-panel__cell-value">{{
+                      'gantt.baselines.variance.minutesRangeValue' | transloco: { from: formatNumber(row.fromDurationMinutes), to: formatNumber(row.toDurationMinutes) }
+                    }}</span>
                     <span class="baseline-panel__cell-label">{{ row.durationDeltaLabel }}</span>
                   </td>
                   <td
@@ -268,7 +284,9 @@
                     [class.baseline-panel__cell--behind]="(row.workDeltaMinutes ?? 0) > 0"
                     [class.baseline-panel__cell--ahead]="(row.workDeltaMinutes ?? 0) < 0"
                   >
-                    <span class="baseline-panel__cell-value">{{ formatNumber(row.fromWorkMinutes) }} → {{ formatNumber(row.toWorkMinutes) }} min</span>
+                    <span class="baseline-panel__cell-value">{{
+                      'gantt.baselines.variance.minutesRangeValue' | transloco: { from: formatNumber(row.fromWorkMinutes), to: formatNumber(row.toWorkMinutes) }
+                    }}</span>
                     <span class="baseline-panel__cell-label">{{ row.workDeltaLabel }}</span>
                   </td>
                   <td
@@ -276,7 +294,9 @@
                     [class.baseline-panel__cell--behind]="(row.costDeltaAmount ?? 0) > 0"
                     [class.baseline-panel__cell--ahead]="(row.costDeltaAmount ?? 0) < 0"
                   >
-                    <span class="baseline-panel__cell-value">{{ formatNumber(row.fromCostAmount) }} → {{ formatNumber(row.toCostAmount) }}</span>
+                    <span class="baseline-panel__cell-value">{{
+                      'gantt.baselines.variance.rangeValue' | transloco: { from: formatNumber(row.fromCostAmount), to: formatNumber(row.toCostAmount) }
+                    }}</span>
                     <span class="baseline-panel__cell-label">{{ row.costDeltaLabel }}</span>
                   </td>
                 </tr>

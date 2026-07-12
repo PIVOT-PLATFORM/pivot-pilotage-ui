@@ -547,6 +547,8 @@
         "selectPlaceholder": "Choose a baseline…",
         "loading": "Loading variance…",
         "empty": "No task in this baseline.",
+        "rangeValue": "{{from}} → {{to}}",
+        "minutesRangeValue": "{{from}} → {{to}} min",
         "columns": {
           "task": "Task",
           "start": "Start (baseline → actual)",

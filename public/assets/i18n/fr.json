@@ -547,6 +547,8 @@
         "selectPlaceholder": "Choisir une baseline…",
         "loading": "Chargement des écarts…",
         "empty": "Aucune tâche dans cette baseline.",
+        "rangeValue": "{{from}} → {{to}}",
+        "minutesRangeValue": "{{from}} → {{to}} min",
         "columns": {
           "task": "Tâche",
           "start": "Début (baseline → réel)",
