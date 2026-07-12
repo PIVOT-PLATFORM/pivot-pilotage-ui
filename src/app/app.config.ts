@@ -4,6 +4,8 @@ import { provideRouter } from '@angular/router';
 import { provideTransloco } from '@jsverse/transloco';
 import { routes } from './app.routes';
 import { TranslocoHttpLoader } from './core/i18n/transloco.loader';
+import { providePilotageUi } from '../../projects/pilotage-ui/src/public-api';
+import { environment } from '../environments/environment';
 
 /**
  * Bootstrap config de pivot-pilotage-ui.
@@ -24,6 +26,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideHttpClient(),
+    providePilotageUi({ apiUrl: environment.apiUrl }),
     provideTransloco({
       config: {
         availableLangs: ['fr', 'en'],

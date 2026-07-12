@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "analytics": "51239438-fd41-4446-b31f-1c20f90ccee1"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -95,6 +96,34 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "tsConfig": "tsconfig.spec.json",
+            "runner": "vitest",
+            "coverageReporters": ["lcov", "text", "html"]
+          }
+        }
+      }
+    },
+    "pilotage-ui": {
+      "projectType": "library",
+      "root": "projects/pilotage-ui",
+      "sourceRoot": "projects/pilotage-ui/src",
+      "prefix": "piv-pilotage",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/pilotage-ui/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/pilotage-ui/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/pilotage-ui/tsconfig.spec.json",
             "runner": "vitest",
             "coverageReporters": ["lcov", "text", "html"]
           }

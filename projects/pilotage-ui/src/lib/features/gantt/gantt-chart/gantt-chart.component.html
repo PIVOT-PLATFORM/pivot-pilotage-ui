@@ -1,0 +1,114 @@
+@if (loading()) {
+  <div class="gc-state" role="status">
+    <span class="pv-skeleton gc-state__bar"></span>
+    <span class="pv-skeleton gc-state__bar"></span>
+    <span class="pv-skeleton gc-state__bar"></span>
+  </div>
+} @else if (loadErrorKey()) {
+  <div class="gc-state">
+    <p class="alert alert-error">{{ loadErrorKey()! | transloco }}</p>
+    <button type="button" class="btn btn-secondary" (click)="retryLoad()">
+      {{ 'gantt.chart.retry' | transloco }}
+    </button>
+  </div>
+} @else if (layout().empty) {
+  <div class="pv-empty-state">
+    <p class="pv-empty-state__title">{{ 'gantt.chart.empty.title' | transloco }}</p>
+    <p class="pv-empty-state__text">{{ 'gantt.chart.empty.text' | transloco }}</p>
+    <a
+      class="btn btn-ghost"
+      [routerLink]="[
+        '/pilotage/tenants',
+        projectRef.tenantId,
+        'teams',
+        projectRef.teamId,
+        'projects',
+        projectRef.projectId,
+        'gantt',
+        'tree'
+      ]"
+      >{{ 'gantt.chart.openTree' | transloco }}</a
+    >
+  </div>
+} @else {
+  <section class="gc" [attr.aria-label]="'gantt.chart.title' | transloco">
+    <!-- Left pane: grouped task list -->
+    <div class="gc__left">
+      <div class="gc__left-head">{{ 'gantt.chart.taskColumn' | transloco }}</div>
+      <div class="gc__left-body" [style.height.px]="layout().bodyHeight">
+        @for (row of layout().rows; track $index) {
+          @if (row.type === 'group') {
+            <div class="gc__group" [style.height.px]="row.height">{{ row.name }}</div>
+          } @else {
+            <div class="gc__row" [class.gc__row--ms]="row.isMilestone" [style.height.px]="row.height">
+              <div class="gc__row-body">
+                <div class="gc__row-name">{{ row.name }}</div>
+                @if (row.dateLabel) {
+                  <div class="gc__row-dates">{{ row.dateLabel }}</div>
+                }
+              </div>
+              @if (row.isMilestone) {
+                <span class="gc__ms-ico" aria-hidden="true"></span>
+              } @else {
+                <span class="gc__avatar" aria-hidden="true">{{ row.initials || '·' }}</span>
+              }
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Right pane: time-scaled timeline -->
+    <div class="gc__right">
+      <div class="gc__tl" [style.width.px]="layout().width">
+        <div class="gc__tl-head" [style.height.px]="headH">
+          @for (col of layout().columns; track col.left) {
+            <div class="gc__month" [style.left.px]="col.left" [style.width.px]="col.width">{{ col.label }}</div>
+          }
+        </div>
+        <div class="gc__tl-body" [style.height.px]="layout().bodyHeight">
+          @for (col of layout().columns; track col.left) {
+            <div class="gc__grid" [style.left.px]="col.left"></div>
+          }
+
+          @for (row of layout().rows; track $index) {
+            @if (row.type === 'group') {
+              <div class="gc__band" [style.top.px]="row.y" [style.height.px]="row.height"></div>
+            } @else {
+              @if (row.bar) {
+                <div
+                  class="gc__bar"
+                  [style.top.px]="row.y + (rowH - barH) / 2"
+                  [style.left.px]="row.bar.left"
+                  [style.width.px]="row.bar.width"
+                >
+                  @if (row.bar.pct > 0) {
+                    <div class="gc__bar-fill" [style.width.%]="row.bar.pct"></div>
+                  }
+                </div>
+                @if (row.pctLabel) {
+                  <div class="gc__pct" [style.top.px]="row.y + rowH / 2" [style.left.px]="row.bar.left + row.bar.width + 6">
+                    {{ row.pctLabel }}
+                  </div>
+                }
+              }
+              @if (row.marker) {
+                <div class="gc__ms" [style.top.px]="row.y + rowH / 2 - 7" [style.left.px]="row.marker.x">
+                  <span class="gc__ms-d" aria-hidden="true"></span>
+                  <span class="gc__ms-lbl">{{ row.name }}</span>
+                </div>
+              }
+            }
+          }
+
+          <svg class="gc__deps" [attr.width]="layout().width" [attr.height]="layout().bodyHeight" aria-hidden="true">
+            @for (d of layout().deps; track $index) {
+              <path class="gc__dep" [attr.d]="d.line"></path>
+              <path class="gc__dep-arrow" [attr.d]="d.arrow"></path>
+            }
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+}

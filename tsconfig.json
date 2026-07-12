@@ -27,6 +27,12 @@
     },
     {
       "path": "./tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/pilotage-ui/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/pilotage-ui/tsconfig.spec.json"
     }
   ]
 }
