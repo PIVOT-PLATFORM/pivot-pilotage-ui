@@ -289,6 +289,7 @@
       "empty": "Aucune tâche pour l'instant dans la structure de découpage de ce projet.",
       "noDate": "—",
       "dateRange": "{{start}} → {{finish}}",
+      "createRecurringLink": "Créer une série de tâches périodiques",
       "load": {
         "errors": {
           "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",
@@ -430,6 +431,57 @@
         "DEADLINE_MISSED": "Échéance dépassée",
         "NEGATIVE_FLOAT": "Marge négative",
         "REJECTED": "Modification rejetée"
+      }
+    },
+    "recurringTask": {
+      "title": "Nouvelle série de tâches périodiques",
+      "loading": "Chargement des tâches du projet…",
+      "retry": "Réessayer",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de charger les tâches du projet."
+        }
+      },
+      "frequency": {
+        "DAILY": "Quotidienne",
+        "WEEKLY": "Hebdomadaire",
+        "MONTHLY": "Mensuelle"
+      },
+      "create": {
+        "nameLabel": "Nom de la série",
+        "parentLabel": "Tâche parente",
+        "parentPlaceholder": "Aucune — rattacher à la racine du plan",
+        "firstOccurrenceDateLabel": "Date de la première occurrence",
+        "frequencyLabel": "Fréquence",
+        "frequencyPlaceholder": "Choisir une fréquence",
+        "intervalLabel": "Intervalle",
+        "intervalHint": "Multiplicateur de cadence, ex. 2 pour « toutes les 2 semaines ». Par défaut 1.",
+        "occurrenceCountLabel": "Nombre d'occurrences",
+        "occurrenceCountHint": "Entre 1 et {{max}} occurrences.",
+        "durationLabel": "Durée de chaque occurrence (minutes ouvrées, optionnel)",
+        "durationHint": "Laisser vide ou zéro pour générer des jalons ; une valeur positive génère des tâches.",
+        "submit": "Créer la série",
+        "announceCreated": "Série « {{name}} » créée avec {{count}} occurrences.",
+        "errors": {
+          "NAME_REQUIRED": "Le nom de la série est requis.",
+          "DATE_REQUIRED": "La date de la première occurrence est requise.",
+          "FREQUENCY_REQUIRED": "Une fréquence est requise pour créer une tâche périodique.",
+          "OCCURRENCE_COUNT_INVALID": "Le nombre d'occurrences est requis et doit être un nombre entier positif pour créer une tâche périodique.",
+          "OCCURRENCE_COUNT_TOO_HIGH": "Le nombre d'occurrences ne peut pas dépasser {{max}}.",
+          "INTERVAL_INVALID": "L'intervalle doit être un nombre entier positif.",
+          "DURATION_INVALID": "La durée d'une occurrence doit être un nombre entier de minutes positif ou nul.",
+          "INVALID_RECURRENCE": "Cette tâche périodique a été rejetée par le serveur — la fréquence ou le nombre d'occurrences est manquant ou invalide.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour créer une tâche périodique dans ce projet.",
+          "NOT_FOUND": "Ce projet, ou la tâche parente sélectionnée, est introuvable.",
+          "GENERIC": "Impossible de créer la série de tâches périodiques."
+        }
+      },
+      "result": {
+        "title": "Série créée",
+        "noDate": "—",
+        "ruleLabel": "Règle de récurrence : {{rule}}",
+        "occurrencesAriaLabel": "Occurrences générées"
       }
     }
   },
