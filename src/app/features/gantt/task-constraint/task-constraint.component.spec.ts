@@ -26,6 +26,16 @@ const MFO_WITH_CONFLICT: TaskConstraint = {
   ],
 };
 
+const DEADLINE_MISSED: TaskConstraint = {
+  taskId: 100,
+  constraintType: 'ASAP',
+  constraintDate: null,
+  deadline: '2026-08-01T17:00:00Z',
+  warnings: [
+    { type: 'DEADLINE_MISSED', detail: 'deadline 2026-08-01T17:00:00Z exceeded by computed finish 2026-08-05T09:00:00Z' },
+  ],
+};
+
 interface ApiMock {
   get: ReturnType<typeof vi.fn>;
   set: ReturnType<typeof vi.fn>;
@@ -159,6 +169,24 @@ describe('TaskConstraintComponent', () => {
       expect(icon?.getAttribute('aria-hidden')).toBe('true');
       expect(items[0].textContent).toContain('gantt.taskConstraint.warnings.CONSTRAINT_CONFLICT');
       expect(items[0].textContent).toContain('constraint MFO target precedes hard dependency floor');
+    });
+
+    it('AC2 — a deadline exceeded by the computed finish renders a DEADLINE_MISSED warning without disabling the form', () => {
+      const fixture = createFixture(makeApiMock({ get: vi.fn(() => of(DEADLINE_MISSED)) }));
+      const el = fixture.nativeElement as HTMLElement;
+
+      const items = el.querySelectorAll('.task-constraint__warning');
+      expect(items).toHaveLength(1);
+      const icon = items[0].querySelector('.task-constraint__warning-icon');
+      expect(icon?.getAttribute('aria-hidden')).toBe('true');
+      expect(items[0].textContent).toContain('gantt.taskConstraint.warnings.DEADLINE_MISSED');
+      expect(items[0].textContent).toContain('deadline 2026-08-01T17:00:00Z exceeded');
+
+      // AC2 — "sans bloquer" : a deadline miss is a soft indicator, the form stays fully usable.
+      const submitButton = el.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const dateInput = el.querySelector('#task-constraint-date') as HTMLInputElement;
+      expect(submitButton.disabled).toBe(false);
+      expect(dateInput.disabled).toBe(true); // ASAP stays dateless — unrelated to the warning.
     });
   });
 
