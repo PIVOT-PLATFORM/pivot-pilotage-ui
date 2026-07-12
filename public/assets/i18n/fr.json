@@ -483,6 +483,99 @@
         "ruleLabel": "Règle de récurrence : {{rule}}",
         "occurrencesAriaLabel": "Occurrences générées"
       }
+    },
+    "baselines": {
+      "title": "Baselines & analyse des écarts",
+      "loading": "Chargement des baselines…",
+      "retry": "Réessayer",
+      "notAvailable": "—",
+      "taskRemoved": "Tâche supprimée",
+      "precisionChanged": "L'altitude temporelle a changé depuis la capture — écart à interpréter avec prudence.",
+      "precisionChangedShort": "altitude modifiée",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de charger les baselines."
+        }
+      },
+      "slotLabel": {
+        "base": "Baseline",
+        "numbered": "Baseline {{n}}"
+      },
+      "pose": {
+        "title": "Prendre une baseline",
+        "indexLabel": "Emplacement (0 à 10, optionnel)",
+        "indexPlaceholder": "Automatique (premier emplacement libre)",
+        "submit": "Prendre la baseline",
+        "hintAtLimit": "Les 11 emplacements sont utilisés — écrasez ou supprimez une baseline existante avant d'en poser une nouvelle.",
+        "announceCreated": "Baseline posée : {{label}} ({{count}} tâche(s)).",
+        "announceOverwritten": "Baseline écrasée : {{label}} ({{count}} tâche(s)).",
+        "errors": {
+          "INVALID_INDEX": "L'emplacement doit être un nombre entier compris entre 0 et 10.",
+          "INVALID_BASELINE_INDEX": "Cet emplacement de baseline a été rejeté par le serveur (0 à 10 attendu).",
+          "BASELINE_LIMIT_EXCEEDED": "Les 11 baselines possibles sont déjà utilisées — écrasez ou supprimez-en une avant d'en poser une nouvelle.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour poser une baseline sur ce projet (rôle PMO ou chef de projet requis).",
+          "NOT_FOUND": "Ce projet est introuvable ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de poser la baseline."
+        }
+      },
+      "list": {
+        "title": "Baselines posées",
+        "empty": "Aucune baseline posée pour l'instant.",
+        "columns": {
+          "index": "Baseline",
+          "capturedAt": "Capturée le",
+          "taskCount": "Tâches figées",
+          "actions": "Actions"
+        }
+      },
+      "delete": {
+        "button": "Supprimer",
+        "confirmPrompt": "Confirmer la suppression de {{label}} ?",
+        "confirmButton": "Oui, supprimer",
+        "cancelButton": "Annuler",
+        "announceDeleted": "Baseline supprimée : {{label}}.",
+        "errors": {
+          "FORBIDDEN": "Vous n'avez pas les droits pour supprimer cette baseline (rôle PMO ou chef de projet requis).",
+          "NOT_FOUND": "Cette baseline est introuvable.",
+          "GENERIC": "Impossible de supprimer la baseline."
+        }
+      },
+      "variance": {
+        "title": "Écarts vs baseline (planifié / réel)",
+        "selectLabel": "Baseline à comparer au réel",
+        "selectPlaceholder": "Choisir une baseline…",
+        "loading": "Chargement des écarts…",
+        "empty": "Aucune tâche dans cette baseline.",
+        "rangeValue": "{{from}} → {{to}}",
+        "minutesRangeValue": "{{from}} → {{to}} min",
+        "columns": {
+          "task": "Tâche",
+          "start": "Début (baseline → réel)",
+          "finish": "Fin (baseline → réel)",
+          "duration": "Durée (baseline → réel)",
+          "work": "Travail (baseline → réel)",
+          "cost": "Coût (baseline → réel)"
+        },
+        "errors": {
+          "NOT_FOUND": "Cette baseline est introuvable.",
+          "GENERIC": "Impossible de charger les écarts."
+        }
+      },
+      "compare": {
+        "title": "Comparer deux baselines",
+        "fromLabel": "Baseline de référence",
+        "toLabel": "Baseline comparée",
+        "submit": "Comparer",
+        "loading": "Chargement de la comparaison…",
+        "empty": "Aucune tâche à comparer.",
+        "errors": {
+          "SELECT_TWO": "Choisissez deux baselines à comparer.",
+          "SAME_INDEX": "Choisissez deux baselines différentes.",
+          "NOT_FOUND": "L'une des baselines comparées est introuvable.",
+          "GENERIC": "Impossible de comparer les baselines."
+        }
+      }
     }
   },
   "calendar": {
