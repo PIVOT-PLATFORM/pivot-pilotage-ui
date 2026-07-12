@@ -5,7 +5,14 @@ import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { environment } from '../../../../environments/environment';
 import { WbsApiService } from './wbs-api.service';
-import { GanttProjectRef, WbsApiError, WbsTaskResponse, WbsTreeResponse } from './wbs.models';
+import {
+  CreateRecurringTaskRequest,
+  GanttProjectRef,
+  RecurringTaskResponse,
+  WbsApiError,
+  WbsTaskResponse,
+  WbsTreeResponse,
+} from './wbs.models';
 
 const REF: GanttProjectRef = { tenantId: 1, teamId: 2, projectId: 3 };
 const BASE = `${environment.apiUrl}/tenants/1/teams/2/projects/3/gantt`;
@@ -16,6 +23,7 @@ const TASK_A: WbsTaskResponse = {
   wbsCode: '1',
   name: 'Lot A',
   nodeKind: 'SUMMARY',
+  nodeKindLabel: 'Summary task',
   position: 0,
   startDate: '2026-01-01T00:00:00Z',
   finishDate: '2026-03-01T00:00:00Z',
@@ -160,6 +168,77 @@ describe('WbsApiService', () => {
       service.move(REF, 100, { parentTaskId: 999 }).subscribe({ error: e => (error = e) });
 
       httpMock.expectOne(`${BASE}/tasks/100/move`).flush(null, { status: 404, statusText: 'Not Found' });
+
+      expect(error?.status).toBe(404);
+    });
+  });
+
+  describe('createRecurringTask', () => {
+    const REQUEST: CreateRecurringTaskRequest = {
+      name: 'Comité hebdo',
+      firstOccurrenceDate: '2026-08-01',
+      frequency: 'WEEKLY',
+      intervalCount: 1,
+      occurrenceCount: 10,
+    };
+
+    const SERIES: WbsTaskResponse = { ...TASK_A, taskId: 501, wbsCode: '3', name: 'Comité hebdo', nodeKind: 'RECURRING', nodeKindLabel: 'Recurring task series', readOnly: false, ariaReadOnly: false };
+    const OCCURRENCE: WbsTaskResponse = {
+      ...TASK_A,
+      taskId: 502,
+      parentTaskId: 501,
+      wbsCode: '3.1',
+      name: 'Comité hebdo — occurrence 1/10',
+      nodeKind: 'MILESTONE',
+      nodeKindLabel: 'Milestone',
+      readOnly: false,
+      ariaReadOnly: false,
+    };
+    const RESPONSE: RecurringTaskResponse = {
+      series: SERIES,
+      recurrenceRule: 'FREQ=WEEKLY;INTERVAL=1;COUNT=10;DTSTART=2026-08-01',
+      occurrences: [OCCURRENCE],
+    };
+
+    it('POSTs the recurring-task endpoint with the request body and returns the series + occurrences', () => {
+      let result: RecurringTaskResponse | undefined;
+      service.createRecurringTask(REF, REQUEST).subscribe(v => (result = v));
+
+      const req = httpMock.expectOne(`${BASE}/tasks/recurring`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(REQUEST);
+      req.flush(RESPONSE, { status: 201, statusText: 'Created' });
+
+      expect(result).toEqual(RESPONSE);
+    });
+
+    it('propagates a 422 INVALID_RECURRENCE error body', () => {
+      let error: HttpErrorResponse | undefined;
+      service.createRecurringTask(REF, REQUEST).subscribe({ error: e => (error = e) });
+
+      const body: WbsApiError = { code: 'INVALID_RECURRENCE', message: 'frequency is required' };
+      httpMock
+        .expectOne(`${BASE}/tasks/recurring`)
+        .flush(body, { status: 422, statusText: 'Unprocessable Entity' });
+
+      expect(error?.status).toBe(422);
+      expect((error?.error as WbsApiError).code).toBe('INVALID_RECURRENCE');
+    });
+
+    it('propagates a bodyless 403 (fail-closed WbsEditPolicy)', () => {
+      let error: HttpErrorResponse | undefined;
+      service.createRecurringTask(REF, REQUEST).subscribe({ error: e => (error = e) });
+
+      httpMock.expectOne(`${BASE}/tasks/recurring`).flush(null, { status: 403, statusText: 'Forbidden' });
+
+      expect(error?.status).toBe(403);
+    });
+
+    it('propagates a bodyless 404 (project, or a supplied parentTaskId, not visible)', () => {
+      let error: HttpErrorResponse | undefined;
+      service.createRecurringTask(REF, { ...REQUEST, parentTaskId: 999 }).subscribe({ error: e => (error = e) });
+
+      httpMock.expectOne(`${BASE}/tasks/recurring`).flush(null, { status: 404, statusText: 'Not Found' });
 
       expect(error?.status).toBe(404);
     });

@@ -1,0 +1,134 @@
+<div class="recurring-task">
+  <h1 class="recurring-task__title">{{ 'gantt.recurringTask.title' | transloco }}</h1>
+
+  <p class="recurring-task__sr-only" aria-live="polite">{{ announcement() }}</p>
+
+  @if (loading()) {
+    <p class="recurring-task__status" role="status">{{ 'gantt.recurringTask.loading' | transloco }}</p>
+  } @else if (loadErrorKey()) {
+    <div class="recurring-task__status recurring-task__status--error" role="alert">
+      <p>{{ loadErrorKey()! | transloco }}</p>
+      <button type="button" (click)="retryLoad()">{{ 'gantt.recurringTask.retry' | transloco }}</button>
+    </div>
+  } @else {
+    <form class="recurring-task__form" (submit)="$event.preventDefault(); submitCreate()">
+      <div class="recurring-task__field">
+        <label for="rt-name">{{ 'gantt.recurringTask.create.nameLabel' | transloco }}</label>
+        <input
+          id="rt-name"
+          type="text"
+          [value]="nameInput()"
+          (input)="onNameInput($event)"
+          [attr.aria-invalid]="createErrorKey() ? true : null"
+        />
+      </div>
+
+      <div class="recurring-task__field">
+        <label for="rt-parent">{{ 'gantt.recurringTask.create.parentLabel' | transloco }}</label>
+        <select id="rt-parent" [value]="parentTaskIdInput() ?? ''" (change)="onParentTaskIdChange($event)">
+          <option value="">{{ 'gantt.recurringTask.create.parentPlaceholder' | transloco }}</option>
+          @for (task of tasks(); track task.taskId) {
+            <option [value]="task.taskId">{{ task.wbsCode }} — {{ task.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="recurring-task__field">
+        <label for="rt-first-date">{{ 'gantt.recurringTask.create.firstOccurrenceDateLabel' | transloco }}</label>
+        <input
+          id="rt-first-date"
+          type="date"
+          [value]="firstOccurrenceDateInput()"
+          (input)="onFirstOccurrenceDateInput($event)"
+          [attr.aria-invalid]="createErrorKey() ? true : null"
+        />
+      </div>
+
+      <div class="recurring-task__field">
+        <label for="rt-frequency">{{ 'gantt.recurringTask.create.frequencyLabel' | transloco }}</label>
+        <select id="rt-frequency" [value]="frequencyInput()" (change)="onFrequencyChange($event)">
+          <option value="">{{ 'gantt.recurringTask.create.frequencyPlaceholder' | transloco }}</option>
+          @for (frequency of frequencies; track frequency) {
+            <option [value]="frequency">{{ ('gantt.recurringTask.frequency.' + frequency) | transloco }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="recurring-task__field">
+        <label for="rt-interval">{{ 'gantt.recurringTask.create.intervalLabel' | transloco }}</label>
+        <input
+          id="rt-interval"
+          type="number"
+          step="1"
+          [value]="intervalCountInput()"
+          (input)="onIntervalCountInput($event)"
+          [attr.aria-describedby]="'rt-interval-hint'"
+        />
+        <p id="rt-interval-hint" class="recurring-task__hint">{{ 'gantt.recurringTask.create.intervalHint' | transloco }}</p>
+      </div>
+
+      <div class="recurring-task__field">
+        <label for="rt-occurrence-count">{{ 'gantt.recurringTask.create.occurrenceCountLabel' | transloco }}</label>
+        <input
+          id="rt-occurrence-count"
+          type="number"
+          step="1"
+          [value]="occurrenceCountInput()"
+          (input)="onOccurrenceCountInput($event)"
+          [attr.aria-describedby]="'rt-occurrence-count-hint'"
+          [attr.aria-invalid]="createErrorKey() ? true : null"
+        />
+        <p id="rt-occurrence-count-hint" class="recurring-task__hint">
+          {{ 'gantt.recurringTask.create.occurrenceCountHint' | transloco: { max: maxOccurrences } }}
+        </p>
+      </div>
+
+      <div class="recurring-task__field">
+        <label for="rt-duration">{{ 'gantt.recurringTask.create.durationLabel' | transloco }}</label>
+        <input
+          id="rt-duration"
+          type="number"
+          step="1"
+          [value]="durationMinutesInput()"
+          (input)="onDurationMinutesInput($event)"
+          [attr.aria-describedby]="'rt-duration-hint'"
+        />
+        <p id="rt-duration-hint" class="recurring-task__hint">{{ 'gantt.recurringTask.create.durationHint' | transloco }}</p>
+      </div>
+
+      <button type="submit" [disabled]="creating()">{{ 'gantt.recurringTask.create.submit' | transloco }}</button>
+
+      @if (createErrorKey()) {
+        <p class="recurring-task__error" role="alert">{{ createErrorKey()! | transloco }}</p>
+      }
+    </form>
+
+    @if (result(); as created) {
+      <div class="recurring-task__result">
+        <h2 class="recurring-task__result-title">{{ 'gantt.recurringTask.result.title' | transloco }}</h2>
+
+        <p class="recurring-task__series">
+          <app-node-kind-icon [nodeKind]="created.series.nodeKind" [label]="created.series.nodeKindLabel" />
+          <span class="recurring-task__series-code">{{ created.series.wbsCode }}</span>
+          <span>{{ created.series.name }}</span>
+          <span class="recurring-task__series-kind">{{ created.series.nodeKindLabel }}</span>
+        </p>
+
+        <p class="recurring-task__rule">
+          {{ 'gantt.recurringTask.result.ruleLabel' | transloco: { rule: created.recurrenceRule } }}
+        </p>
+
+        <ul class="recurring-task__occurrences" role="list" [attr.aria-label]="'gantt.recurringTask.result.occurrencesAriaLabel' | transloco">
+          @for (occurrence of created.occurrences; track occurrence.taskId) {
+            <li class="recurring-task__occurrence">
+              <app-node-kind-icon [nodeKind]="occurrence.nodeKind" [label]="occurrence.nodeKindLabel" />
+              <span class="recurring-task__occurrence-code">{{ occurrence.wbsCode }}</span>
+              <span>{{ occurrence.name }}</span>
+              <span class="recurring-task__occurrence-date">{{ formatOccurrenceDate(occurrence.startDate) }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  }
+</div>

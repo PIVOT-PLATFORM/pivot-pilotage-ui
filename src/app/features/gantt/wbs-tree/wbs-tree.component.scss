@@ -5,9 +5,27 @@
   padding: 1rem;
 }
 
+.wbs-tree__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .wbs-tree__title {
   font-size: 1.25rem;
   margin: 0;
+}
+
+.wbs-tree__recurring-link {
+  font-size: 0.9rem;
+  color: #1a73e8;
+
+  &:focus-visible {
+    outline: 3px solid #202124;
+    outline-offset: 2px;
+  }
 }
 
 .wbs-tree__status {
@@ -54,6 +72,18 @@
   &--summary {
     background-color: #f1f3f4;
     font-weight: 600;
+  }
+
+  // US22.4.6 — a jalon/série périodique is visually distinct from a plain leaf: a coloured
+  // left border tints the whole row, but never as the *only* cue — the losange/repeat glyph
+  // (`app-node-kind-icon`) and the textual kind label (`.wbs-tree__kind`) always carry the same
+  // information non-visually, exactly like the summary row's readonly badge above (A11y AC).
+  &--milestone {
+    border-inline-start: 3px solid #a34f00;
+  }
+
+  &--recurring {
+    border-inline-start: 3px solid #1a73e8;
   }
 }
 

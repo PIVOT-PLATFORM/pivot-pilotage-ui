@@ -17,6 +17,7 @@ interface WbsTaskDto {
   wbsCode: string;
   name: string;
   nodeKind: 'SUMMARY' | 'LEAF' | 'MILESTONE' | 'RECURRING';
+  nodeKindLabel: string;
   position: number;
   startDate: string | null;
   finishDate: string | null;
@@ -38,6 +39,7 @@ const SUMMARY: WbsTaskDto = {
   wbsCode: '1',
   name: 'Lot A',
   nodeKind: 'SUMMARY',
+  nodeKindLabel: 'Summary task',
   position: 0,
   startDate: '2026-01-01T00:00:00Z',
   finishDate: '2026-03-01T00:00:00Z',
@@ -59,6 +61,7 @@ const LEAF_1: WbsTaskDto = {
   wbsCode: '1.1',
   name: 'Spécification',
   nodeKind: 'LEAF',
+  nodeKindLabel: 'Task',
   position: 0,
   startDate: '2026-01-01T00:00:00Z',
   finishDate: '2026-01-31T00:00:00Z',
@@ -80,6 +83,7 @@ const LEAF_2: WbsTaskDto = {
   wbsCode: '1.2',
   name: 'Développement',
   nodeKind: 'LEAF',
+  nodeKindLabel: 'Task',
   position: 1,
   startDate: '2026-02-01T00:00:00Z',
   finishDate: '2026-03-01T00:00:00Z',
@@ -91,6 +95,28 @@ const LEAF_2: WbsTaskDto = {
   ariaLevel: 2,
   ariaSetSize: 2,
   ariaPosInSet: 2,
+  ariaReadOnly: false,
+  revision: 0,
+};
+
+const MILESTONE: WbsTaskDto = {
+  taskId: 4,
+  parentTaskId: 1,
+  wbsCode: '1.3',
+  name: 'Comité de lancement',
+  nodeKind: 'MILESTONE',
+  nodeKindLabel: 'Milestone',
+  position: 2,
+  startDate: '2026-01-20T00:00:00Z',
+  finishDate: '2026-01-20T00:00:00Z',
+  durationMinutes: 0,
+  percentComplete: null,
+  progressLabel: null,
+  readOnly: false,
+  ariaRole: 'treeitem',
+  ariaLevel: 2,
+  ariaSetSize: 3,
+  ariaPosInSet: 3,
   ariaReadOnly: false,
   revision: 0,
 };
@@ -200,5 +226,30 @@ test.describe('WBS — indent/outdent & réordonnancement (US22.4.1b)', () => {
     // Rolled back — the tree is untouched, still 3 rows with the original WBS code.
     await expect(page.getByRole('treeitem')).toHaveCount(3);
     await expect(devRow).toContainText('1.2');
+  });
+});
+
+test.describe('WBS — jalons & tâches périodiques (US22.4.6)', () => {
+  test('AC1/A11y — un jalon (durée 0) affiche un losange distinct, sa classe CSS dédiée et un libellé texte, pas seulement une couleur/forme', async ({
+    page,
+  }) => {
+    await stubTree(page, [SUMMARY, LEAF_1, MILESTONE]);
+
+    await page.goto(TENANT_PATH);
+
+    const milestoneRow = page.getByRole('treeitem').filter({ hasText: 'Comité de lancement' });
+    await expect(milestoneRow).toHaveClass(/wbs-tree__item--milestone/);
+    await expect(milestoneRow.locator('svg.node-kind-icon__glyph--milestone')).toBeVisible();
+    await expect(milestoneRow).toContainText('Jalon');
+    await expect(milestoneRow).toHaveAttribute('title', 'Milestone');
+  });
+
+  test('expose un lien vers le formulaire de création de série périodique', async ({ page }) => {
+    await stubTree(page, [SUMMARY, LEAF_1, LEAF_2]);
+
+    await page.goto(TENANT_PATH);
+
+    await page.getByRole('link', { name: 'Créer une série de tâches périodiques' }).click();
+    await expect(page).toHaveURL(/\/gantt\/tasks\/recurring$/);
   });
 });

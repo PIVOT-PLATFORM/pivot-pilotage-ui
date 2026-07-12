@@ -7,7 +7,15 @@
   </div>
 } @else {
   <div class="wbs-tree">
-    <h1 class="wbs-tree__title">{{ 'gantt.wbsTree.title' | transloco }}</h1>
+    <div class="wbs-tree__header">
+      <h1 class="wbs-tree__title">{{ 'gantt.wbsTree.title' | transloco }}</h1>
+      <a
+        class="wbs-tree__recurring-link"
+        [routerLink]="['/tenants', projectRef.tenantId, 'teams', projectRef.teamId, 'projects', projectRef.projectId, 'gantt', 'tasks', 'recurring']"
+      >
+        {{ 'gantt.wbsTree.createRecurringLink' | transloco }}
+      </a>
+    </div>
 
     @if (nodes().length === 0) {
       <p class="wbs-tree__empty">{{ 'gantt.wbsTree.empty' | transloco }}</p>
@@ -17,18 +25,22 @@
           <li
             class="wbs-tree__item"
             [class.wbs-tree__item--summary]="node.nodeKind === 'SUMMARY'"
+            [class.wbs-tree__item--milestone]="node.nodeKind === 'MILESTONE'"
+            [class.wbs-tree__item--recurring]="node.nodeKind === 'RECURRING'"
             role="treeitem"
             [attr.data-task-id]="node.taskId"
             [attr.aria-level]="node.ariaLevel"
             [attr.aria-setsize]="node.ariaSetSize"
             [attr.aria-posinset]="node.ariaPosInSet"
             [attr.aria-readonly]="node.ariaReadOnly"
+            [attr.title]="node.nodeKindLabel"
             [style.padding-inline-start.px]="(node.ariaLevel - 1) * 20"
             [tabindex]="focusedTaskId() === node.taskId ? 0 : -1"
             (focus)="onRowFocus(node)"
             (keydown)="onRowKeyDown($event, node)"
           >
             <span class="wbs-tree__code">{{ node.wbsCode }}</span>
+            <app-node-kind-icon [nodeKind]="node.nodeKind" [label]="node.nodeKindLabel" />
             <span class="wbs-tree__name">{{ node.name }}</span>
             <span class="wbs-tree__kind">{{ nodeKindLabelKey(node) | transloco }}</span>
 

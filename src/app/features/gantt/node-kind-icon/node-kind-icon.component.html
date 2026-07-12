@@ -1,0 +1,30 @@
+<span class="node-kind-icon" [attr.title]="label()" aria-hidden="true">
+  @if (nodeKind() === 'MILESTONE') {
+    <svg
+      class="node-kind-icon__glyph node-kind-icon__glyph--milestone"
+      viewBox="0 0 16 16"
+      width="12"
+      height="12"
+      focusable="false"
+    >
+      <path d="M8 0 L16 8 L8 16 L0 8 Z" />
+    </svg>
+  } @else if (nodeKind() === 'RECURRING') {
+    <svg
+      class="node-kind-icon__glyph node-kind-icon__glyph--recurring"
+      viewBox="0 0 16 16"
+      width="12"
+      height="12"
+      focusable="false"
+    >
+      <path
+        d="M3 7 A5 5 0 1 1 4 10.5 M3 7 L3 4 M3 7 L6 7"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.6"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  }
+</span>

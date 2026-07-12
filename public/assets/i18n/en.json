@@ -289,6 +289,7 @@
       "empty": "No tasks yet in this project's work breakdown structure.",
       "noDate": "—",
       "dateRange": "{{start}} → {{finish}}",
+      "createRecurringLink": "Create a periodic task series",
       "load": {
         "errors": {
           "NOT_FOUND": "This project could not be found, or you don't have access to it.",
@@ -430,6 +431,57 @@
         "DEADLINE_MISSED": "Deadline missed",
         "NEGATIVE_FLOAT": "Negative float",
         "REJECTED": "Change rejected"
+      }
+    },
+    "recurringTask": {
+      "title": "New periodic task series",
+      "loading": "Loading the project's tasks…",
+      "retry": "Retry",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "This project could not be found, or you don't have access to it.",
+          "GENERIC": "Could not load the project's tasks."
+        }
+      },
+      "frequency": {
+        "DAILY": "Daily",
+        "WEEKLY": "Weekly",
+        "MONTHLY": "Monthly"
+      },
+      "create": {
+        "nameLabel": "Series name",
+        "parentLabel": "Parent task",
+        "parentPlaceholder": "None — attach at the plan's root",
+        "firstOccurrenceDateLabel": "First occurrence date",
+        "frequencyLabel": "Frequency",
+        "frequencyPlaceholder": "Choose a frequency",
+        "intervalLabel": "Interval count",
+        "intervalHint": "Cadence multiplier, e.g. 2 for \"every 2 weeks\". Defaults to 1.",
+        "occurrenceCountLabel": "Number of occurrences",
+        "occurrenceCountHint": "Between 1 and {{max}} occurrences.",
+        "durationLabel": "Occurrence duration (worked minutes, optional)",
+        "durationHint": "Leave blank or zero to generate milestones; a positive value generates tasks.",
+        "submit": "Create the series",
+        "announceCreated": "Series \"{{name}}\" created with {{count}} occurrences.",
+        "errors": {
+          "NAME_REQUIRED": "The series name is required.",
+          "DATE_REQUIRED": "The first occurrence date is required.",
+          "FREQUENCY_REQUIRED": "A frequency is required to create a periodic task.",
+          "OCCURRENCE_COUNT_INVALID": "The number of occurrences is required and must be a positive whole number to create a periodic task.",
+          "OCCURRENCE_COUNT_TOO_HIGH": "The number of occurrences cannot exceed {{max}}.",
+          "INTERVAL_INVALID": "The interval count must be a positive whole number.",
+          "DURATION_INVALID": "The occurrence duration must be a non-negative whole number of minutes.",
+          "INVALID_RECURRENCE": "This periodic task was rejected by the server — the frequency or number of occurrences is missing or invalid.",
+          "FORBIDDEN": "You don't have permission to create a periodic task in this project.",
+          "NOT_FOUND": "This project, or the selected parent task, could not be found.",
+          "GENERIC": "Could not create the periodic task series."
+        }
+      },
+      "result": {
+        "title": "Series created",
+        "noDate": "—",
+        "ruleLabel": "Recurrence rule: {{rule}}",
+        "occurrencesAriaLabel": "Generated occurrences"
       }
     }
   },

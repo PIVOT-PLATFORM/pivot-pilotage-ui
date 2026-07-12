@@ -1,9 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Observable } from 'rxjs';
+import { NodeKindIconComponent } from '../node-kind-icon/node-kind-icon.component';
 import { WbsApiService } from '../data-access/wbs-api.service';
 import { GanttProjectRef, WbsApiError, WbsTaskResponse } from '../data-access/wbs.models';
 
@@ -16,6 +17,13 @@ import { GanttProjectRef, WbsApiError, WbsTaskResponse } from '../data-access/wb
  *   controls, keyboard and mouse.
  * - **US22.4.1c** ("agrégation des tâches récapitulatives") — a `SUMMARY` node's aggregated
  *   dates/duration/progress, rendered read-only and visually distinct from an editable leaf.
+ * - **US22.4.6** ("jalons & tâches périodiques") — a `MILESTONE`/`RECURRING` node renders a
+ *   distinct decorative glyph ({@link NodeKindIconComponent}, losange for a milestone) next to its
+ *   already-existing localized kind text (`gantt.wbsTree.nodeKind.*`, unchanged) and now also
+ *   carries the backend's own {@link WbsTaskResponse.nodeKindLabel} as a hover tooltip
+ *   (`title` attribute on the row) — three independent, non-colour-only ways to identify a jalon
+ *   or a recurring series (A11y AC: "pas uniquement par leur forme ou leur couleur"). A link to
+ *   {@link RecurringTaskFormComponent} lets the user start a new periodic series from here.
  *
  * **Never recomputes the hierarchy client-side.** {@link WbsTaskResponse.ariaLevel}/
  * `ariaSetSize`/`ariaPosInSet`/`wbsCode` are read verbatim from the backend (US22.4.1a: "propriété
@@ -61,7 +69,7 @@ import { GanttProjectRef, WbsApiError, WbsTaskResponse } from '../data-access/wb
   selector: 'app-wbs-tree',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, RouterLink, NodeKindIconComponent],
   templateUrl: './wbs-tree.component.html',
   styleUrl: './wbs-tree.component.scss',
 })

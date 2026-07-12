@@ -1,9 +1,10 @@
 /**
  * Domain models mirroring `pivot-pilotage-core`'s WBS (Work Breakdown Structure) contract —
  * US22.4.1a ("modèle arborescent & numérotation"), US22.4.1b ("indent/outdent &
- * réordonnancement") and US22.4.1c ("agrégation des tâches récapitulatives"). Authoritative
- * backend contract: `fr.pivot.pilotage.gantt` package (`WbsTaskController`/`WbsTaskResponse`/
- * `WbsTreeResponse`, `pivot-pilotage-core` PR #43) and the backlog files under
+ * réordonnancement"), US22.4.1c ("agrégation des tâches récapitulatives") and US22.4.6 ("jalons &
+ * tâches périodiques"). Authoritative backend contract: `fr.pivot.pilotage.gantt` package
+ * (`WbsTaskController`/`WbsTaskResponse`/`WbsTreeResponse`/`RecurringTaskResponse`,
+ * `pivot-pilotage-core` PR #43/#55) and the backlog files under
  * `pivot-docs/docs/backlog/EPIC-roadmap/FEATURES/gantt-detaille/`.
  *
  * A WBS node is **not** a separate entity — it is the same shared temporal graph node
@@ -32,6 +33,16 @@ export interface WbsTaskResponse {
   readonly wbsCode: string;
   readonly name: string;
   readonly nodeKind: WbsNodeKind;
+  /**
+   * A11y — stable, backend-derived textual label for {@link nodeKind} (`"Milestone"`,
+   * `"Recurring task series"`, …), computed by `WbsTaskResponse.labelFor` server-side (US22.4.6).
+   * Carried by **every** node regardless of how it was created or read (`POST .../gantt/tasks`,
+   * `POST .../gantt/tasks/recurring`, `GET .../gantt/tree`) so a jalon/série never depends on
+   * shape or colour alone to be identifiable — surfaced here as a hover tooltip
+   * ({@link WbsTreeComponent}'s `title` attribute) alongside this repo's own localized
+   * `gantt.wbsTree.nodeKind.*` text label, never as a template literal by itself (i18n rule).
+   */
+  readonly nodeKindLabel: string;
   /** Display order among its siblings (0-based). */
   readonly position: number;
   /** ISO instant — own value for a leaf, aggregated min (US22.4.1c) for a summary — or `null`. */
@@ -105,7 +116,58 @@ export type WbsErrorCode =
   | 'WBS_HIERARCHY_CYCLE'
   | 'ILLEGAL_WBS_MOVE'
   | 'DERIVED_FIELD_NOT_EDITABLE'
-  | 'MALFORMED_BODY';
+  | 'MALFORMED_BODY'
+  | 'INVALID_RECURRENCE';
+
+/** Recurrence cadence for `POST .../gantt/tasks/recurring` — mirrors the backend's `RecurrenceFrequency` enum (US22.4.6). */
+export type RecurrenceFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY';
+
+/**
+ * Upper bound on {@link CreateRecurringTaskRequest.occurrenceCount} — mirrors
+ * `RecurringTaskService.MAX_OCCURRENCES` server-side (perf note, EN22.2: bounds the WBS graph's
+ * growth on a long-running recurrence, e.g. a multi-year weekly committee). Pre-validated here for
+ * immediate feedback; the `422 INVALID_RECURRENCE` mapping stays a tested defensive fallback for a
+ * race, same "pre-validate, never the only path" posture as `TaskSchedulingComponent`.
+ */
+export const MAX_RECURRING_OCCURRENCES = 500;
+
+/**
+ * Body of `POST .../gantt/tasks/recurring` — mirrors `CreateRecurringTaskRequest`. Creates, in one
+ * backend transaction, a `RECURRING` series task plus its generated occurrences (US22.4.6): see
+ * `RecurringTaskFormComponent`'s TSDoc for the full behavioural contract (calendar snapping,
+ * MANUAL pinning, MILESTONE-vs-LEAF occurrence classification).
+ */
+export interface CreateRecurringTaskRequest {
+  /** Series name — prefixes every generated occurrence's own name (`"{name} — occurrence i/N"`, server-derived). */
+  readonly name: string;
+  /** WBS parent to attach the series under; `undefined`/`null` attaches at the WBS root. Promotes the parent to `SUMMARY` (US22.4.1a) — same rule as any other reparenting write. */
+  readonly parentTaskId?: number | null;
+  /** ISO `yyyy-MM-dd` anchor date for the 1st occurrence, before calendar snapping. */
+  readonly firstOccurrenceDate: string;
+  /** Required (Error AC — `INVALID_RECURRENCE` if absent). */
+  readonly frequency: RecurrenceFrequency;
+  /** Cadence multiplier ("every N days/weeks/months"); server default `1` when omitted. */
+  readonly intervalCount?: number;
+  /** Number of occurrences to generate, `> 0`, capped at {@link MAX_RECURRING_OCCURRENCES} (Error AC — `INVALID_RECURRENCE` if absent/`<= 0`/over the cap). */
+  readonly occurrenceCount: number;
+  /** `0`/omitted ⇒ occurrences are classified `MILESTONE`; `> 0` ⇒ `LEAF` (same durationMinutes=0 rule as AC1). */
+  readonly durationMinutes?: number | null;
+}
+
+/**
+ * Body of `201 Created` from `POST .../gantt/tasks/recurring` — mirrors `RecurringTaskResponse`.
+ * `recurrenceRule` is an opaque, display-only iCalendar-shaped string
+ * (`FREQ=...;INTERVAL=...;COUNT=...;DTSTART=...`) — built and interpreted solely server-side,
+ * never reparsed here.
+ */
+export interface RecurringTaskResponse {
+  /** The `RECURRING` series node itself — a full `WbsTaskResponse`, same shape as any WBS tree node. */
+  readonly series: WbsTaskResponse;
+  /** Opaque iCalendar-shaped recurrence rule — display-only, never reparsed client-side. */
+  readonly recurrenceRule: string;
+  /** Generated occurrences, in order — each a `WbsTaskResponse` child of {@link series}, its own name suffixed `"— occurrence i/N"` server-side. */
+  readonly occurrences: WbsTaskResponse[];
+}
 
 /**
  * Identifies which project's WBS a request targets. `tenantId`/`teamId`/`projectId` travel as

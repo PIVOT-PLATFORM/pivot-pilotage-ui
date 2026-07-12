@@ -2,10 +2,17 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { GanttProjectRef, MoveWbsTaskRequest, WbsTaskResponse, WbsTreeResponse } from './wbs.models';
+import {
+  CreateRecurringTaskRequest,
+  GanttProjectRef,
+  MoveWbsTaskRequest,
+  RecurringTaskResponse,
+  WbsTaskResponse,
+  WbsTreeResponse,
+} from './wbs.models';
 
 /**
- * HTTP client for the WBS contract (US22.4.1a/b/c) exposed by `pivot-pilotage-core`'s
+ * HTTP client for the WBS contract (US22.4.1a/b/c, US22.4.6) exposed by `pivot-pilotage-core`'s
  * `WbsTaskController`. Authoritative contract: that controller's own JavaDoc plus the backlog
  * files under `pivot-docs/docs/backlog/EPIC-roadmap/FEATURES/gantt-detaille/`.
  *
@@ -78,5 +85,20 @@ export class WbsApiService {
    */
   move(ref: GanttProjectRef, taskId: number, request: MoveWbsTaskRequest): Observable<WbsTaskResponse> {
     return this.http.patch<WbsTaskResponse>(`${this.baseUrl(ref)}/tasks/${taskId}/move`, request);
+  }
+
+  /**
+   * Creates a recurring task series plus its generated occurrences in one call (US22.4.6) — see
+   * `RecurringTaskFormComponent`'s TSDoc for the full behavioural contract (calendar snapping,
+   * MANUAL pinning, MILESTONE-vs-LEAF occurrence classification).
+   *
+   * @throws HttpErrorResponse 400 (`firstOccurrenceDate` missing — bean validation), 422
+   *         (`INVALID_RECURRENCE` — `frequency` missing, or `occurrenceCount` missing/`<= 0`/over
+   *         the {@link MAX_RECURRING_OCCURRENCES} cap), 403 (unauthorized — fail-closed today, see
+   *         class TSDoc), 404 (project not visible, or a supplied `parentTaskId` not found —
+   *         non-disclosure, both bodyless)
+   */
+  createRecurringTask(ref: GanttProjectRef, request: CreateRecurringTaskRequest): Observable<RecurringTaskResponse> {
+    return this.http.post<RecurringTaskResponse>(`${this.baseUrl(ref)}/tasks/recurring`, request);
   }
 }
