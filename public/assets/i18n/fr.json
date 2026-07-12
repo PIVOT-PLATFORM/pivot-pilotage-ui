@@ -384,6 +384,53 @@
         "wouldBeAutoLabel": "Début que le moteur calculerait en mode automatique (lecture seule)",
         "deltaLabel": "Écart par rapport à l'automatique (minutes ouvrées)"
       }
+    },
+    "taskConstraint": {
+      "title": "Contrainte de date & échéance",
+      "loading": "Chargement de la contrainte de la tâche…",
+      "retry": "Réessayer",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "Ce projet ou cette tâche est introuvable, ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de charger la contrainte de la tâche."
+        }
+      },
+      "type": {
+        "ASAP": "Dès que possible",
+        "ALAP": "Le plus tard possible",
+        "MSO": "Doit commencer le",
+        "MFO": "Doit finir le",
+        "SNET": "Ne peut commencer avant le",
+        "SNLT": "Ne peut commencer après le",
+        "FNET": "Ne peut finir avant le",
+        "FNLT": "Ne peut finir après le"
+      },
+      "form": {
+        "typeLabel": "Type de contrainte",
+        "dateLabel": "Date de la contrainte",
+        "dateHint": "Requise pour ce type de contrainte.",
+        "dateHintDateless": "Ce type de contrainte ne porte jamais de date.",
+        "deadlineLabel": "Échéance (optionnelle)",
+        "deadlineHint": "Un indicateur mou — ne bloque jamais l'ordonnancement, ne fait que lever un avertissement si dépassée.",
+        "submit": "Enregistrer la contrainte",
+        "announceUpdated": "Contrainte mise à jour : {{type}}.",
+        "announceUpdatedWithWarnings": "Contrainte mise à jour : {{type}} — {{count}} avertissement(s) ci-dessous.",
+        "errors": {
+          "DATE_REQUIRED": "Une date de contrainte est requise pour ce type de contrainte.",
+          "INVALID_DATE": "La date de contrainte n'est pas une date valide.",
+          "INVALID_DEADLINE": "L'échéance n'est pas une date valide.",
+          "INVALID_TASK_CONSTRAINT": "Cette contrainte a été rejetée par le serveur — une date est requise pour ce type de contrainte.",
+          "FORBIDDEN": "Vous n'avez pas les droits pour modifier la contrainte de cette tâche.",
+          "NOT_FOUND": "Ce projet ou cette tâche est introuvable.",
+          "GENERIC": "Impossible de mettre à jour la contrainte."
+        }
+      },
+      "warnings": {
+        "CONSTRAINT_CONFLICT": "Conflit de contrainte",
+        "DEADLINE_MISSED": "Échéance dépassée",
+        "NEGATIVE_FLOAT": "Marge négative",
+        "REJECTED": "Modification rejetée"
+      }
     }
   },
   "calendar": {

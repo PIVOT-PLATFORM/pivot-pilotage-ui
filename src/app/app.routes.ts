@@ -50,6 +50,12 @@ import { Routes } from '@angular/router';
  * sur ce sprint. Chemin identique aux segments exposés par `pivot-pilotage-core`'s
  * `WbsTaskController` (`.../gantt/tasks/{taskId}/duration|effort|scheduling-mode`, PR #49), même
  * gap-era `tenantId`/`teamId`/`projectId` en path — voir `TaskSchedulingProjectRef` TSDoc.
+ *
+ * `.../projects/:projectId/gantt/tasks/:taskId/constraint` — US22.4.4 (contraintes de date &
+ * échéances), cinquième route du Gantt détaillé (F22.4) livrée en parallèle sur ce sprint. Chemin
+ * identique au segment exposé par `pivot-pilotage-core`'s `WbsTaskController`
+ * (`.../gantt/tasks/{taskId}/constraint`, PR #54), même gap-era `tenantId`/`teamId`/`projectId`
+ * en path — voir `TaskConstraintProjectRef` TSDoc.
  */
 export const routes: Routes = [
   {
@@ -95,5 +101,10 @@ export const routes: Routes = [
     path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tasks/:taskId/scheduling',
     loadComponent: () =>
       import('./features/gantt/task-scheduling/task-scheduling.component').then((m) => m.TaskSchedulingComponent),
+  },
+  {
+    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tasks/:taskId/constraint',
+    loadComponent: () =>
+      import('./features/gantt/task-constraint/task-constraint.component').then((m) => m.TaskConstraintComponent),
   },
 ];
