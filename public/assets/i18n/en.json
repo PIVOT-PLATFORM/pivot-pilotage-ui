@@ -384,6 +384,53 @@
         "wouldBeAutoLabel": "Start the engine would compute in automatic mode (read-only)",
         "deltaLabel": "Variance versus automatic (worked minutes)"
       }
+    },
+    "taskConstraint": {
+      "title": "Date constraint & deadline",
+      "loading": "Loading the task's constraint…",
+      "retry": "Retry",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "This project or task could not be found, or you don't have access to it.",
+          "GENERIC": "Could not load the task's constraint."
+        }
+      },
+      "type": {
+        "ASAP": "As soon as possible",
+        "ALAP": "As late as possible",
+        "MSO": "Must start on",
+        "MFO": "Must finish on",
+        "SNET": "Start no earlier than",
+        "SNLT": "Start no later than",
+        "FNET": "Finish no earlier than",
+        "FNLT": "Finish no later than"
+      },
+      "form": {
+        "typeLabel": "Constraint type",
+        "dateLabel": "Constraint date",
+        "dateHint": "Required for this constraint type.",
+        "dateHintDateless": "This constraint type never carries a date.",
+        "deadlineLabel": "Deadline (optional)",
+        "deadlineHint": "A soft indicator — never blocks scheduling, only raises a warning if missed.",
+        "submit": "Save constraint",
+        "announceUpdated": "Constraint updated: {{type}}.",
+        "announceUpdatedWithWarnings": "Constraint updated: {{type}} — {{count}} warning(s) below.",
+        "errors": {
+          "DATE_REQUIRED": "A constraint date is required for this constraint type.",
+          "INVALID_DATE": "The constraint date is not a valid date.",
+          "INVALID_DEADLINE": "The deadline is not a valid date.",
+          "INVALID_TASK_CONSTRAINT": "This constraint was rejected by the server — a date is required for this constraint type.",
+          "FORBIDDEN": "You don't have permission to change this task's constraint.",
+          "NOT_FOUND": "This project or task could not be found.",
+          "GENERIC": "Could not update the constraint."
+        }
+      },
+      "warnings": {
+        "CONSTRAINT_CONFLICT": "Constraint conflict",
+        "DEADLINE_MISSED": "Deadline missed",
+        "NEGATIVE_FLOAT": "Negative float",
+        "REJECTED": "Change rejected"
+      }
     }
   },
   "calendar": {
