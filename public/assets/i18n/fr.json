@@ -576,6 +576,56 @@
           "GENERIC": "Impossible de comparer les baselines."
         }
       }
+    },
+    "taskProgress": {
+      "title": "Suivi d'avancement",
+      "loading": "Chargement de l'avancement de la tâche…",
+      "retry": "Réessayer",
+      "unknownValue": "Pas encore confirmé",
+      "readOnlyBadge": "Lecture seule — le % réalisé de cette tâche est agrégé à partir de ses sous-tâches",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "Ce projet ou cette tâche est introuvable, ou vous n'y avez pas accès.",
+          "GENERIC": "Impossible de charger l'avancement de la tâche."
+        }
+      },
+      "form": {
+        "percentLabel": "% réalisé",
+        "physicalPercentLabel": "% physique réalisé (optionnel)",
+        "physicalPercentHint": "Une mesure distincte de l'avancement physique, indépendante du % temporel ci-dessus.",
+        "actualStartLabel": "Date réelle de début (optionnel)",
+        "actualFinishLabel": "Date réelle de fin (optionnel)",
+        "statusDateLabel": "Date de fraîcheur (optionnel)",
+        "statusDateHint": "La date de fraîcheur de cette saisie — distincte de la date d'état du projet utilisée par la ligne de progression.",
+        "actorRefLabel": "Saisi par",
+        "submit": "Enregistrer l'avancement",
+        "announceUpdated": "Avancement mis à jour : {{progress}}.",
+        "errors": {
+          "PERCENT_REQUIRED": "Le % réalisé est requis.",
+          "PERCENT_NOT_A_NUMBER": "Le % réalisé doit être un nombre.",
+          "PERCENT_OUT_OF_RANGE": "Le % réalisé doit être compris entre 0 et 100.",
+          "PHYSICAL_PERCENT_NOT_A_NUMBER": "Le % physique réalisé doit être un nombre.",
+          "PHYSICAL_PERCENT_OUT_OF_RANGE": "Le % physique réalisé doit être compris entre 0 et 100.",
+          "INVALID_ACTUAL_START": "La date réelle de début n'est pas une date valide.",
+          "INVALID_ACTUAL_FINISH": "La date réelle de fin n'est pas une date valide.",
+          "ACTUAL_FINISH_BEFORE_START": "La date réelle de fin ne peut pas être antérieure à la date réelle de début.",
+          "INVALID_STATUS_DATE": "La date de fraîcheur n'est pas une date valide.",
+          "ACTOR_REF_REQUIRED": "Veuillez identifier qui saisit cet avancement.",
+          "INVALID_TASK_PROGRESS": "Cet avancement a été rejeté par le serveur — vérifiez le % réalisé et les dates réelles.",
+          "DERIVED_FIELD_NOT_EDITABLE": "L'avancement de cette tâche est agrégé à partir de ses sous-tâches et ne peut pas être modifié directement.",
+          "FORBIDDEN": "Vous n'avez pas le droit de saisir l'avancement de cette tâche.",
+          "NOT_FOUND": "Ce projet ou cette tâche est introuvable.",
+          "GENERIC": "Impossible de mettre à jour l'avancement de la tâche."
+        }
+      },
+      "derived": {
+        "actualWorkLabel": "Travail réel (minutes)",
+        "remainingWorkLabel": "Travail restant (minutes)",
+        "totalWorkLabel": "Travail total (minutes)",
+        "actualStartLabel": "Date réelle de début",
+        "actualFinishLabel": "Date réelle de fin",
+        "statusDateLabel": "Date de fraîcheur"
+      }
     }
   },
   "calendar": {

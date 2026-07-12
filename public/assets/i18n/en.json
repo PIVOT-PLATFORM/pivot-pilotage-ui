@@ -576,6 +576,56 @@
           "GENERIC": "Could not compare the baselines."
         }
       }
+    },
+    "taskProgress": {
+      "title": "Progress tracking",
+      "loading": "Loading the task's progress…",
+      "retry": "Retry",
+      "unknownValue": "Not yet confirmed",
+      "readOnlyBadge": "Read-only — this task's percent complete is aggregated from its sub-tasks",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "This project or task could not be found, or you don't have access to it.",
+          "GENERIC": "Could not load the task's progress."
+        }
+      },
+      "form": {
+        "percentLabel": "Percent complete",
+        "physicalPercentLabel": "Physical percent complete (optional)",
+        "physicalPercentHint": "A distinct measure of physical completion, independent of the temporal percent above.",
+        "actualStartLabel": "Actual start (optional)",
+        "actualFinishLabel": "Actual finish (optional)",
+        "statusDateLabel": "Status date (optional)",
+        "statusDateHint": "The freshness date of this entry — distinct from the project's own status date used by the progress line.",
+        "actorRefLabel": "Entered by",
+        "submit": "Save progress",
+        "announceUpdated": "Progress updated: {{progress}}.",
+        "errors": {
+          "PERCENT_REQUIRED": "Percent complete is required.",
+          "PERCENT_NOT_A_NUMBER": "Percent complete must be a number.",
+          "PERCENT_OUT_OF_RANGE": "Percent complete must be between 0 and 100.",
+          "PHYSICAL_PERCENT_NOT_A_NUMBER": "Physical percent complete must be a number.",
+          "PHYSICAL_PERCENT_OUT_OF_RANGE": "Physical percent complete must be between 0 and 100.",
+          "INVALID_ACTUAL_START": "The actual start is not a valid date.",
+          "INVALID_ACTUAL_FINISH": "The actual finish is not a valid date.",
+          "ACTUAL_FINISH_BEFORE_START": "The actual finish cannot precede the actual start.",
+          "INVALID_STATUS_DATE": "The status date is not a valid date.",
+          "ACTOR_REF_REQUIRED": "Please identify who is entering this progress.",
+          "INVALID_TASK_PROGRESS": "This progress was rejected by the server — check the percent complete and the actual dates.",
+          "DERIVED_FIELD_NOT_EDITABLE": "This task's progress is aggregated from its sub-tasks and cannot be edited directly.",
+          "FORBIDDEN": "You don't have permission to record this task's progress.",
+          "NOT_FOUND": "This project or task could not be found.",
+          "GENERIC": "Could not update the task's progress."
+        }
+      },
+      "derived": {
+        "actualWorkLabel": "Actual work (minutes)",
+        "remainingWorkLabel": "Remaining work (minutes)",
+        "totalWorkLabel": "Total work (minutes)",
+        "actualStartLabel": "Actual start",
+        "actualFinishLabel": "Actual finish",
+        "statusDateLabel": "Status date"
+      }
     }
   },
   "calendar": {

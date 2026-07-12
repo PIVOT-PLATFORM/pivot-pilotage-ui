@@ -1,0 +1,153 @@
+<div class="task-progress-form">
+  <h2 class="task-progress-form__title">{{ 'gantt.taskProgress.title' | transloco }}</h2>
+
+  <p class="task-progress-form__sr-only" aria-live="polite">{{ announcement() }}</p>
+
+  @if (loading()) {
+    <p class="task-progress-form__status" role="status">{{ 'gantt.taskProgress.loading' | transloco }}</p>
+  } @else if (loadErrorKey()) {
+    <div class="task-progress-form__status task-progress-form__status--error" role="alert">
+      <p>{{ loadErrorKey()! | transloco }}</p>
+      <button type="button" (click)="retryLoad()">{{ 'gantt.taskProgress.retry' | transloco }}</button>
+    </div>
+  } @else if (node(); as currentNode) {
+    <div class="task-progress-form__context">
+      <span class="task-progress-form__wbs-code">{{ currentNode.wbsCode }}</span>
+      <span class="task-progress-form__name">{{ currentNode.name }}</span>
+      <span class="task-progress-form__node-kind">{{ ('gantt.wbsTree.nodeKind.' + currentNode.nodeKind) | transloco }}</span>
+    </div>
+
+    <!-- A11y AC — the bar's value is always exposed as text, never colour/fill alone. Reflects
+         the last *confirmed* server state: the tree-seeded percent until a write here succeeds,
+         then the fresh authoritative one (see class TSDoc "Read gap"). -->
+    <div class="task-progress-form__bar">
+      <span
+        class="task-progress-form__bar-fill"
+        aria-hidden="true"
+        [style.width.%]="progress()?.percentComplete ?? currentNode.percentComplete ?? 0"
+      ></span>
+      <span class="task-progress-form__bar-label">
+        {{ progress()?.progressLabel ?? currentNode.progressLabel ?? ('gantt.taskProgress.unknownValue' | transloco) }}
+      </span>
+    </div>
+
+    @if (isSummary()) {
+      <p class="task-progress-form__readonly-badge" role="note">
+        {{ 'gantt.taskProgress.readOnlyBadge' | transloco }}
+      </p>
+    } @else {
+      <form class="task-progress-form__form" (submit)="$event.preventDefault(); submit()">
+        <div class="task-progress-form__field">
+          <label for="task-progress-percent">{{ 'gantt.taskProgress.form.percentLabel' | transloco }}</label>
+          <input
+            id="task-progress-percent"
+            type="number"
+            step="1"
+            [value]="percentCompleteInput()"
+            (input)="onPercentCompleteInput($event)"
+            [attr.aria-invalid]="saveErrorKey() ? true : null"
+            [attr.aria-describedby]="saveErrorKey() ? 'task-progress-error' : null"
+          />
+        </div>
+
+        <div class="task-progress-form__field">
+          <label for="task-progress-physical-percent">{{ 'gantt.taskProgress.form.physicalPercentLabel' | transloco }}</label>
+          <input
+            id="task-progress-physical-percent"
+            type="number"
+            step="1"
+            [value]="physicalPercentCompleteInput()"
+            (input)="onPhysicalPercentCompleteInput($event)"
+            [attr.aria-invalid]="saveErrorKey() ? true : null"
+            [attr.aria-describedby]="saveErrorKey() ? 'task-progress-error' : 'task-progress-physical-percent-hint'"
+          />
+          <p id="task-progress-physical-percent-hint" class="task-progress-form__hint">
+            {{ 'gantt.taskProgress.form.physicalPercentHint' | transloco }}
+          </p>
+        </div>
+
+        <div class="task-progress-form__field">
+          <label for="task-progress-actual-start">{{ 'gantt.taskProgress.form.actualStartLabel' | transloco }}</label>
+          <input
+            id="task-progress-actual-start"
+            type="datetime-local"
+            [value]="actualStartInput()"
+            (input)="onActualStartInput($event)"
+            [attr.aria-invalid]="saveErrorKey() ? true : null"
+            [attr.aria-describedby]="saveErrorKey() ? 'task-progress-error' : null"
+          />
+        </div>
+
+        <div class="task-progress-form__field">
+          <label for="task-progress-actual-finish">{{ 'gantt.taskProgress.form.actualFinishLabel' | transloco }}</label>
+          <input
+            id="task-progress-actual-finish"
+            type="datetime-local"
+            [value]="actualFinishInput()"
+            (input)="onActualFinishInput($event)"
+            [attr.aria-invalid]="saveErrorKey() ? true : null"
+            [attr.aria-describedby]="saveErrorKey() ? 'task-progress-error' : null"
+          />
+        </div>
+
+        <div class="task-progress-form__field">
+          <label for="task-progress-status-date">{{ 'gantt.taskProgress.form.statusDateLabel' | transloco }}</label>
+          <input
+            id="task-progress-status-date"
+            type="date"
+            [value]="statusDateInput()"
+            (input)="onStatusDateInput($event)"
+            [attr.aria-invalid]="saveErrorKey() ? true : null"
+            [attr.aria-describedby]="saveErrorKey() ? 'task-progress-error' : 'task-progress-status-date-hint'"
+          />
+          <p id="task-progress-status-date-hint" class="task-progress-form__hint">
+            {{ 'gantt.taskProgress.form.statusDateHint' | transloco }}
+          </p>
+        </div>
+
+        <div class="task-progress-form__field">
+          <label for="task-progress-actor-ref">{{ 'gantt.taskProgress.form.actorRefLabel' | transloco }}</label>
+          <input
+            id="task-progress-actor-ref"
+            type="text"
+            [value]="actorRefInput()"
+            (input)="onActorRefInput($event)"
+            [attr.aria-invalid]="saveErrorKey() ? true : null"
+            [attr.aria-describedby]="saveErrorKey() ? 'task-progress-error' : null"
+          />
+        </div>
+
+        <button type="submit" [disabled]="saving()">{{ 'gantt.taskProgress.form.submit' | transloco }}</button>
+
+        @if (saveErrorKey()) {
+          <p id="task-progress-error" class="task-progress-form__error" role="alert">{{ saveErrorKey()! | transloco }}</p>
+        }
+      </form>
+
+      <!-- Derived, read-only, server-owned fields — unknown until the first successful write (class
+           TSDoc "Read gap"). No `aria-readonly` here: not part of the ARIA-in-HTML mapping for
+           dl/generic containers, so it would be silently ignored by assistive tech — the "(read-only)"
+           wording in each dt's translated label already carries that meaning, visibly and for screen
+           readers alike (same posture as `TaskSchedulingComponent`'s derived section). -->
+      <dl class="task-progress-form__derived">
+        <dt>{{ 'gantt.taskProgress.derived.actualWorkLabel' | transloco }}</dt>
+        <dd>{{ progress()?.actualWorkMinutes ?? ('gantt.taskProgress.unknownValue' | transloco) }}</dd>
+
+        <dt>{{ 'gantt.taskProgress.derived.remainingWorkLabel' | transloco }}</dt>
+        <dd>{{ progress()?.remainingWorkMinutes ?? ('gantt.taskProgress.unknownValue' | transloco) }}</dd>
+
+        <dt>{{ 'gantt.taskProgress.derived.totalWorkLabel' | transloco }}</dt>
+        <dd>{{ progress()?.totalWorkMinutes ?? ('gantt.taskProgress.unknownValue' | transloco) }}</dd>
+
+        <dt>{{ 'gantt.taskProgress.derived.actualStartLabel' | transloco }}</dt>
+        <dd>{{ formatInstant(progress()?.actualStart) }}</dd>
+
+        <dt>{{ 'gantt.taskProgress.derived.actualFinishLabel' | transloco }}</dt>
+        <dd>{{ formatInstant(progress()?.actualFinish) }}</dd>
+
+        <dt>{{ 'gantt.taskProgress.derived.statusDateLabel' | transloco }}</dt>
+        <dd>{{ progress()?.statusDate ?? ('gantt.taskProgress.unknownValue' | transloco) }}</dd>
+      </dl>
+    }
+  }
+</div>
