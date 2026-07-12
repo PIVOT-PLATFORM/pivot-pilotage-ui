@@ -125,6 +125,7 @@
           "options": {
             "tsConfig": "projects/pilotage-ui/tsconfig.spec.json",
             "runner": "vitest",
+            "setupFiles": ["projects/pilotage-ui/src/test-setup.ts"],
             "coverageReporters": ["lcov", "text", "html"]
           }
         }
