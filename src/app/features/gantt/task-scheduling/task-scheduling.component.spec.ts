@@ -193,7 +193,7 @@ describe('TaskSchedulingComponent', () => {
       expect(el.querySelector('#task-scheduling-duration')?.tagName).toBe('INPUT');
     });
 
-    it('Error AC — rejects an empty duration client-side, without calling the API', () => {
+    it('Error AC — rejects an empty duration client-side, without calling the API, and reverts the input', () => {
       const schedulingApi = makeSchedulingApiMock();
       const fixture = createFixture(makeWbsApiMock(), schedulingApi);
 
@@ -202,6 +202,24 @@ describe('TaskSchedulingComponent', () => {
 
       expect(schedulingApi.setDuration).not.toHaveBeenCalled();
       expect(text(fixture)).toContain('gantt.taskScheduling.duration.errors.REQUIRED');
+      const input = (fixture.nativeElement as HTMLElement).querySelector('#task-scheduling-duration') as HTMLInputElement;
+      expect(input.value).toBe('480');
+    });
+
+    it('Error AC — rejects a fractional (non-integer) duration client-side, without calling the API, and reverts the input', () => {
+      const schedulingApi = makeSchedulingApiMock();
+      const fixture = createFixture(makeWbsApiMock(), schedulingApi);
+
+      // A number input still accepts a fractional string programmatically (only the `step`
+      // attribute's constraint-validation UI is affected) — same posture as
+      // `DependencyManagerComponent`'s equivalent lag-input test.
+      setInputValue(fixture, '#task-scheduling-duration', '1.5');
+      submitForm(fixture, 0);
+
+      expect(schedulingApi.setDuration).not.toHaveBeenCalled();
+      expect(text(fixture)).toContain('gantt.taskScheduling.duration.errors.NOT_A_NUMBER');
+      const input = (fixture.nativeElement as HTMLElement).querySelector('#task-scheduling-duration') as HTMLInputElement;
+      expect(input.value).toBe('480');
     });
 
     it('Error AC — rejects a negative duration client-side, without calling the API, and reverts the input', () => {
@@ -217,7 +235,7 @@ describe('TaskSchedulingComponent', () => {
       expect(input.value).toBe('480');
     });
 
-    it('Error AC — rejects a zero duration on a non-milestone task client-side, without calling the API', () => {
+    it('Error AC — rejects a zero duration on a non-milestone task client-side, without calling the API, and reverts the input', () => {
       const schedulingApi = makeSchedulingApiMock();
       const fixture = createFixture(makeWbsApiMock(), schedulingApi);
 
@@ -226,6 +244,8 @@ describe('TaskSchedulingComponent', () => {
 
       expect(schedulingApi.setDuration).not.toHaveBeenCalled();
       expect(text(fixture)).toContain('gantt.taskScheduling.duration.errors.ZERO_NON_MILESTONE');
+      const input = (fixture.nativeElement as HTMLElement).querySelector('#task-scheduling-duration') as HTMLInputElement;
+      expect(input.value).toBe('480');
     });
 
     it('accepts a zero duration on a milestone task', () => {
@@ -274,7 +294,16 @@ describe('TaskSchedulingComponent', () => {
     });
   });
 
-  describe('effort', () => {
+  describe('effort (A11y — labelled native inputs)', () => {
+    it('resource-ref and units inputs are labelled native <input>s', () => {
+      const fixture = createFixture(makeWbsApiMock(), makeSchedulingApiMock());
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('label[for="task-scheduling-resource-ref"]')).not.toBeNull();
+      expect(el.querySelector('label[for="task-scheduling-units"]')).not.toBeNull();
+      expect(el.querySelector('#task-scheduling-resource-ref')?.tagName).toBe('INPUT');
+      expect(el.querySelector('#task-scheduling-units')?.tagName).toBe('INPUT');
+    });
+
     it('Error AC — rejects a blank resource reference client-side, without calling the API', () => {
       const schedulingApi = makeSchedulingApiMock();
       const fixture = createFixture(makeWbsApiMock(), schedulingApi);
@@ -283,6 +312,18 @@ describe('TaskSchedulingComponent', () => {
 
       expect(schedulingApi.setEffort).not.toHaveBeenCalled();
       expect(text(fixture)).toContain('gantt.taskScheduling.effort.errors.RESOURCE_REQUIRED');
+    });
+
+    it('Error AC — rejects a blank units value client-side, without calling the API', () => {
+      const schedulingApi = makeSchedulingApiMock();
+      const fixture = createFixture(makeWbsApiMock(), schedulingApi);
+
+      setInputValue(fixture, '#task-scheduling-resource-ref', 'alice');
+      setInputValue(fixture, '#task-scheduling-units', '');
+      submitForm(fixture, 1);
+
+      expect(schedulingApi.setEffort).not.toHaveBeenCalled();
+      expect(text(fixture)).toContain('gantt.taskScheduling.effort.errors.UNITS_REQUIRED');
     });
 
     it('Error AC — rejects non-positive units client-side, without calling the API', () => {

@@ -36,11 +36,12 @@ import {
  * never offers duration/effort/mode forms for one, mirroring `WbsTreeComponent`'s own read-only
  * badge treatment; only its context (name, WBS code, aggregated duration) is shown.
  *
- * **No optimistic update.** Mirrors `WbsTreeComponent`'s structural-action posture: on a failed
- * write, the input the user was editing is reverted to the last **confirmed** value (from
- * {@link scheduling} if a previous write already succeeded, else the tree-seeded initial value) —
- * never left showing a value the backend never persisted (Error AC: "la tâche conserve ses valeurs
- * précédentes").
+ * **No optimistic update.** Same spirit as `WbsTreeComponent`'s structural-action posture (never
+ * assume a write succeeded before the server confirms it), applied here to a live-edited field
+ * rather than a reloaded list: on a failed write, the input the user was editing is reverted to the
+ * last **confirmed** value (from {@link scheduling} if a previous write already succeeded, else the
+ * tree-seeded initial value) — never left showing a value the backend never persisted (Error AC:
+ * "la tâche conserve ses valeurs précédentes").
  *
  * **Client-side pre-validation.** The duration/units rules (negative, zero-on-non-milestone,
  * non-positive units) are fully knowable client-side once the node kind is known, so they are
@@ -63,9 +64,11 @@ import {
  *
  * **A11y (AC).** The AUTO/MANUAL toggle is a pair of native `<button>`s carrying `aria-pressed`
  * (never a `<select>` — the AC names `aria-pressed` explicitly), duration/effort are labelled
- * native `<input>`s, and every outcome (a successful write, including the resulting variance for a
- * MANUAL task) is announced through an `aria-live="polite"` region ({@link announcement}),
- * mirroring `WbsTreeComponent`/`DependencyManagerComponent`'s identical pattern.
+ * native `<input>`s. Every *successful* write (including the resulting variance for a MANUAL task)
+ * is announced through an `aria-live="polite"` region ({@link announcement}), mirroring
+ * `WbsTreeComponent`/`DependencyManagerComponent`'s identical pattern; a failed write instead
+ * surfaces its own `role="alert"` paragraph next to the offending field (assertive by nature,
+ * arguably the more correct choice for an error than the polite live region).
  *
  * **Route.** Expects `tenantId`/`teamId`/`projectId`/`taskId` as route params — same gap-era shape
  * as the rest of this feature (see {@link TaskSchedulingProjectRef}'s TSDoc).
@@ -263,6 +266,9 @@ export class TaskSchedulingComponent implements OnInit {
       return;
     }
     const parsed = Number(raw);
+    // Defensive only: a real `type="number"` input normalizes any non-numeric keystroke to `''`
+    // (caught by UNITS_REQUIRED above) before this branch is ever reached — same posture as
+    // `DependencyManagerComponent`'s equivalent comment on its own lag-input validation.
     if (!Number.isFinite(parsed)) {
       this.effortErrorKey.set('gantt.taskScheduling.effort.errors.NOT_A_NUMBER');
       return;

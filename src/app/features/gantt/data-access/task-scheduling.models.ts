@@ -74,14 +74,17 @@ export interface UpdateSchedulingModeRequest {
 /**
  * Error body shape for the US22.4.2 endpoints — `{code, message}`, see `WbsExceptionHandler`.
  *
- * `INVALID_TASK_EFFORT` — `422`, shared by three distinct server-side guards (negative duration,
- * zero duration on a non-milestone, non-positive units); each of this frontend's three PATCH call
- * sites only ever triggers its own subset (the duration endpoint never rejects for a units reason
- * and vice versa), so each form maps this single code to its own precise, statically-translated
- * message — see `TaskSchedulingComponent`'s TSDoc.
+ * `INVALID_TASK_EFFORT` is the only code these three endpoints' 422 bodies can actually carry
+ * (confirmed against `TaskEffortService`/`WbsExceptionHandler`: `setDuration` only ever throws for
+ * a negative or non-milestone-zero duration, `setEffort` only ever throws for non-positive units —
+ * neither request DTO has a derived/typed field for Jackson to reject the way `wbsCode` is on the
+ * WBS tree's create endpoint, so `DERIVED_FIELD_NOT_EDITABLE` never applies here). Each of this
+ * frontend's two PATCH call sites that can 422 only ever triggers its own subset (the duration
+ * endpoint never rejects for a units reason and vice versa), so each form maps this single shared
+ * code to its own precise, statically-translated message — see `TaskSchedulingComponent`'s TSDoc.
  */
 export interface TaskSchedulingApiError {
-  readonly code: 'INVALID_TASK_EFFORT' | 'DERIVED_FIELD_NOT_EDITABLE' | 'MALFORMED_BODY';
+  readonly code: 'INVALID_TASK_EFFORT';
   readonly message: string;
 }
 

@@ -58,6 +58,8 @@
             type="text"
             [value]="resourceRefInput()"
             (input)="onResourceRefInput($event)"
+            [attr.aria-invalid]="effortErrorKey() ? true : null"
+            [attr.aria-describedby]="effortErrorKey() ? 'task-scheduling-effort-error' : null"
           />
         </div>
         <div class="task-scheduling__field">
@@ -101,8 +103,11 @@
         }
       </div>
 
-      <!-- Derived, read-only, engine-owned fields -->
-      <dl class="task-scheduling__derived" [attr.aria-readonly]="true">
+      <!-- Derived, read-only, engine-owned fields. No aria-readonly here: it isn't part of the
+           ARIA-in-HTML mapping for dl/generic containers, so it would be silently ignored by
+           assistive tech — the "(read-only)" wording in each dt's translated label already
+           carries that meaning, visibly and for screen readers alike. -->
+      <dl class="task-scheduling__derived">
         <dt>{{ 'gantt.taskScheduling.derived.workLabel' | transloco }}</dt>
         <dd>{{ scheduling()?.workMinutes ?? ('gantt.taskScheduling.unknownValue' | transloco) }}</dd>
 
