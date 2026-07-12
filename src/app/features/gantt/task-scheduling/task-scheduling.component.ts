@@ -49,6 +49,14 @@ import {
  * covered, mirroring `DependencyManagerComponent`'s identical split between client- and
  * server-validated cases.
  *
+ * **Deliberately no `min`/`required` attribute on the duration/units `<input>`s.** Same posture as
+ * `DependencyManagerComponent`'s lag input: a native HTML5 constraint violation (e.g. `min="0"`
+ * against a typed `-10`) makes the browser silently cancel the `submit` event *before* any Angular
+ * handler runs, which would swallow this component's own translated error message and its
+ * "task keeps its previous value" guarantee. `type="number"`/`step="1"` are kept only for the
+ * numeric keypad/spinner affordance; every actual rule is enforced (and message-translated) in
+ * {@link submitDuration}/{@link submitEffort} instead.
+ *
  * **Security.** No client-side role gating (CLAUDE.md — isolation/authorization is exclusively a
  * backend concern, `WbsEditPolicy`, fail-closed today): every write is attempted regardless of the
  * caller's role, and a `403` is surfaced as an explicit, non-optimistic error.

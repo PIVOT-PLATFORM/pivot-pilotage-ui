@@ -105,10 +105,12 @@ test.describe('Durées/effort/planification — happy path (US22.4.2)', () => {
     await expect(page.getByText(/Effort mis à jour pour alice/)).toBeVisible();
 
     // AC2 — switching to manual pins the dates and surfaces the variance, never silently overwritten.
+    // Scoped dt/dd locators, not a bare text match: the pinned start (2026-01-08) legitimately
+    // repeats between the "current start" and "manually pinned start" rows once MANUAL.
     await page.getByRole('button', { name: 'Manuel', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Manuel', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByText('2026-01-08')).toBeVisible();
-    await expect(page.getByText('2026-01-05')).toBeVisible();
+    await expect(page.locator('dt:has-text("Début figé manuellement") + dd')).toHaveText('2026-01-08');
+    await expect(page.locator('dt:has-text("mode automatique") + dd')).toHaveText('2026-01-05');
   });
 });
 
