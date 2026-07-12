@@ -28,19 +28,21 @@ import { Routes } from '@angular/router';
  * PIVOT ni session — voir `RoadmapPublicShareApiService`/`RoadmapPublicShareViewComponent` TSDoc.
  * Ne jamais lui adjoindre `moduleGuard`/`AuthGuard` un jour sans revalider ce choix.
  *
- * `tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/dependencies` — US22.4.3
- * (dépendances typées FS/SS/FF/SF + retard/avance), première route du Gantt détaillé (F22.4) dans
- * ce repo. Chemin identique au segment exposé par `pivot-pilotage-core`'s `WbsTaskController`
- * (`.../gantt/dependencies`, même gap-era `tenantId`/`teamId`/`projectId` en path — voir
- * `DependencyProjectRef` TSDoc). L'arbre WBS (US22.4.1a/b/c, `.../gantt/tree`) est un item
- * parallèle séparément suivi (`feat/us22-4-1abc-wbs-tree-ui`) — cette route ne dépend pas de sa
- * propre route à terme, les deux convergeront probablement sous un même parent `.../gantt` une
- * fois les deux livrées.
+ * `tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tree` — US22.4.1a/b/c (WBS :
+ * modèle arborescent, numérotation, indent/outdent, agrégation), et
+ * `.../gantt/dependencies` — US22.4.3 (dépendances typées FS/SS/FF/SF + retard/avance) : les
+ * deux premières routes du Gantt détaillé (F22.4) dans ce repo, livrées en parallèle sur des
+ * branches séparées. Chemins identiques aux segments exposés par `pivot-pilotage-core`'s
+ * `WbsTaskController` (`.../gantt/tree`, `.../gantt/dependencies`), même gap-era
+ * `tenantId`/`teamId`/`projectId` en path — voir `GanttProjectRef`/`DependencyProjectRef` TSDoc.
+ * `.../gantt` (sans suffixe) reste délibérément libre pour une future route d'index/synthèse
+ * une fois plusieurs sous-vues Gantt livrées.
  *
  * `tenants/:tenantId/teams/:teamId/calendars` et
  * `.../projects/:projectId/tasks/:taskId/effective-calendar` — US22.4.5 (calendriers ouvrés &
- * exceptions, F22.4 "Gantt détaillé"). Chemins identiques aux segments d'URL exposés par
- * `pivot-pilotage-core`'s `CalendarController` (même gap-era `tenantId`/`teamId` en path — voir
+ * exceptions, F22.4 "Gantt détaillé"), troisième route livrée en parallèle sur ce même sprint.
+ * Chemins identiques aux segments d'URL exposés par `pivot-pilotage-core`'s
+ * `CalendarController` (même gap-era `tenantId`/`teamId` en path — voir
  * `CalendarTeamRef`/`CalendarTaskRef` TSDoc), même posture que la roadmap ci-dessus.
  */
 export const routes: Routes = [
@@ -78,5 +80,9 @@ export const routes: Routes = [
       import('./features/calendar/effective-calendar-view/effective-calendar-view.component').then(
         (m) => m.EffectiveCalendarViewComponent,
       ),
+  },
+  {
+    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tree',
+    loadComponent: () => import('./features/gantt/wbs-tree/wbs-tree.component').then((m) => m.WbsTreeComponent),
   },
 ];

@@ -280,6 +280,44 @@
         },
         "announceDeleted": "Dependency deleted: {{predecessor}} → {{successor}}."
       }
+    },
+    "wbsTree": {
+      "title": "Work breakdown structure",
+      "ariaLabel": "Project work breakdown structure",
+      "loading": "Loading the work breakdown structure…",
+      "retry": "Retry",
+      "empty": "No tasks yet in this project's work breakdown structure.",
+      "noDate": "—",
+      "dateRange": "{{start}} → {{finish}}",
+      "load": {
+        "errors": {
+          "NOT_FOUND": "This project could not be found, or you don't have access to it.",
+          "GENERIC": "Could not load the work breakdown structure."
+        }
+      },
+      "nodeKind": {
+        "SUMMARY": "Summary task",
+        "LEAF": "Task",
+        "MILESTONE": "Milestone",
+        "RECURRING": "Recurring task"
+      },
+      "readOnlyBadge": "Read-only — derived from sub-tasks",
+      "actions": {
+        "groupLabel": "Structure actions",
+        "indent": "Indent",
+        "outdent": "Outdent",
+        "moveUp": "Move up",
+        "moveDown": "Move down",
+        "announceLevelChanged": "{{name}} moved to level {{level}}.",
+        "announceReverted": "{{name}}: change reverted, an error occurred.",
+        "errors": {
+          "ILLEGAL_WBS_MOVE": "This move isn't possible for this task.",
+          "WBS_HIERARCHY_CYCLE": "This move would create a cycle in the plan's hierarchy and was rejected.",
+          "FORBIDDEN": "You don't have permission to change this project's plan structure.",
+          "NOT_FOUND": "This project or task could not be found.",
+          "GENERIC": "Could not update the plan structure."
+        }
+      }
     }
   },
   "calendar": {
