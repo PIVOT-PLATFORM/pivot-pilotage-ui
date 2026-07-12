@@ -16,6 +16,7 @@ const LEAF_TASK: WbsTaskResponse = {
   wbsCode: '1',
   name: 'Développement',
   nodeKind: 'LEAF',
+  nodeKindLabel: 'Task',
   position: 0,
   startDate: '2026-01-05T09:00:00Z',
   finishDate: '2026-01-05T17:00:00Z',
@@ -37,6 +38,7 @@ const MILESTONE_TASK: WbsTaskResponse = {
   wbsCode: '2',
   name: 'Kickoff',
   nodeKind: 'MILESTONE',
+  nodeKindLabel: 'Milestone',
   durationMinutes: 0,
 };
 
@@ -46,6 +48,7 @@ const SUMMARY_TASK: WbsTaskResponse = {
   wbsCode: '3',
   name: 'Lot A',
   nodeKind: 'SUMMARY',
+  nodeKindLabel: 'Summary task',
   durationMinutes: 4800,
   readOnly: true,
   ariaReadOnly: true,
