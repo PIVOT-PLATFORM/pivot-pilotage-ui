@@ -56,6 +56,13 @@ import { Routes } from '@angular/router';
  * identique au segment exposé par `pivot-pilotage-core`'s `WbsTaskController`
  * (`.../gantt/tasks/{taskId}/constraint`, PR #54), même gap-era `tenantId`/`teamId`/`projectId`
  * en path — voir `TaskConstraintProjectRef` TSDoc.
+ *
+ * `.../projects/:projectId/gantt/tasks/recurring` — US22.4.6 (jalons & tâches périodiques), la
+ * série périodique se crée via ce formulaire dédié plutôt qu'inline dans `WbsTreeComponent`
+ * (même découpage "vue liste + route de formulaire séparée" que `.../gantt/tasks/:taskId/
+ * scheduling` ci-dessus). Chemin identique au segment exposé par `pivot-pilotage-core`'s
+ * `WbsTaskController` (`POST .../gantt/tasks/recurring`, PR #55), même gap-era
+ * `tenantId`/`teamId`/`projectId` en path — voir `GanttProjectRef` TSDoc.
  */
 export const routes: Routes = [
   {
@@ -106,5 +113,12 @@ export const routes: Routes = [
     path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tasks/:taskId/constraint',
     loadComponent: () =>
       import('./features/gantt/task-constraint/task-constraint.component').then((m) => m.TaskConstraintComponent),
+  },
+  {
+    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tasks/recurring',
+    loadComponent: () =>
+      import('./features/gantt/recurring-task-form/recurring-task-form.component').then(
+        (m) => m.RecurringTaskFormComponent,
+      ),
   },
 ];
