@@ -103,19 +103,7 @@ $left-w: 320px;
     color: var(--color-gray-500);
   }
 
-  &__avatar {
-    width: 26px;
-    height: 26px;
-    flex-shrink: 0;
-    border-radius: 50%;
-    background: var(--color-brand-100);
-    color: var(--color-brand-700);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.66rem;
-    font-weight: 700;
-  }
+  // Avatar (placeholder d'assigné) → DS `.pv-avatar`.
 
   &__ms-ico {
     width: 14px;
