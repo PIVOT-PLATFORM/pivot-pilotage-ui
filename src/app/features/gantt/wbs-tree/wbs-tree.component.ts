@@ -24,6 +24,17 @@ import { GanttProjectRef, WbsApiError, WbsTaskResponse } from '../data-access/wb
  *   (`title` attribute on the row) — three independent, non-colour-only ways to identify a jalon
  *   or a recurring series (A11y AC: "pas uniquement par leur forme ou leur couleur"). A link to
  *   {@link RecurringTaskFormComponent} lets the user start a new periodic series from here.
+ * - **US22.4.8** ("suivi d'avancement") — the progress-line badge (AC2 "given une date d'état,
+ *   when des tâches sont en retard, then une ligne de progression les matérialise"): renders
+ *   {@link WbsTaskResponse.progressVarianceLabel} verbatim (e.g. `"3d late"`/`"on track"`) next to
+ *   a purely decorative (`aria-hidden`) icon keyed off {@link WbsTaskResponse.late} — never
+ *   computed here, never colour alone (A11y AC), same pattern as `TaskConstraintComponent`'s
+ *   warning rendering. Absent (`progressVarianceLabel` `null`) exactly when the line doesn't apply
+ *   (no schedule, or the project has no status date yet). Entering/editing a task's own percent
+ *   complete is a separate route/component (`TaskProgressFormComponent`, same "dedicated
+ *   route per concern" split as `TaskConstraintComponent`/`TaskSchedulingComponent`) — this tree
+ *   only ever displays the state `GET .../gantt/tree` returns, re-fetched wholesale after a write
+ *   there, same as every other Gantt sub-feature in this repo.
  *
  * **Never recomputes the hierarchy client-side.** {@link WbsTaskResponse.ariaLevel}/
  * `ariaSetSize`/`ariaPosInSet`/`wbsCode` are read verbatim from the backend (US22.4.1a: "propriété

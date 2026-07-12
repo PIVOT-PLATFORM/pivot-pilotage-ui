@@ -23,6 +23,9 @@ const SUMMARY: WbsTaskResponse = {
   durationMinutes: 4800,
   percentComplete: 45,
   progressLabel: '45%',
+  expectedPercentComplete: null,
+  late: false,
+  progressVarianceLabel: null,
   readOnly: true,
   ariaRole: 'treeitem',
   ariaLevel: 1,
@@ -45,6 +48,9 @@ const LEAF_1: WbsTaskResponse = {
   durationMinutes: 2400,
   percentComplete: 100,
   progressLabel: '100%',
+  expectedPercentComplete: 100,
+  late: false,
+  progressVarianceLabel: 'on track',
   readOnly: false,
   ariaRole: 'treeitem',
   ariaLevel: 2,
@@ -67,6 +73,9 @@ const LEAF_2: WbsTaskResponse = {
   durationMinutes: 2400,
   percentComplete: 0,
   progressLabel: null,
+  expectedPercentComplete: 40,
+  late: true,
+  progressVarianceLabel: '5d late',
   readOnly: false,
   ariaRole: 'treeitem',
   ariaLevel: 2,
@@ -89,6 +98,9 @@ const MILESTONE: WbsTaskResponse = {
   durationMinutes: 0,
   percentComplete: null,
   progressLabel: null,
+  expectedPercentComplete: null,
+  late: false,
+  progressVarianceLabel: null,
   readOnly: false,
   ariaRole: 'treeitem',
   ariaLevel: 2,
@@ -111,6 +123,9 @@ const RECURRING_SERIES: WbsTaskResponse = {
   durationMinutes: null,
   percentComplete: null,
   progressLabel: null,
+  expectedPercentComplete: null,
+  late: false,
+  progressVarianceLabel: null,
   readOnly: false,
   ariaRole: 'treeitem',
   ariaLevel: 1,
@@ -257,6 +272,38 @@ describe('WbsTreeComponent', () => {
 
       const leafRow = rowByTaskId(fixture, 102);
       expect(leafRow.querySelector('.wbs-tree__progress')).toBeNull();
+    });
+  });
+
+  describe('US22.4.8 — progress line', () => {
+    it('AC2 — a late task renders the variance badge with the "late" styling and an aria-hidden icon, never colour alone', () => {
+      const fixture = createFixture(makeApiMock());
+
+      const lateRow = rowByTaskId(fixture, 102); // LEAF_2 — late: true, progressVarianceLabel: '5d late'
+      const badge = lateRow.querySelector('.wbs-tree__progress-variance');
+      expect(badge).not.toBeNull();
+      expect(badge?.classList.contains('wbs-tree__progress-variance--late')).toBe(true);
+      expect(badge?.textContent).toContain('5d late');
+
+      const icon = badge?.querySelector('.wbs-tree__progress-variance-icon');
+      expect(icon?.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    it('an on-track task renders the variance badge without the "late" styling', () => {
+      const fixture = createFixture(makeApiMock());
+
+      const onTrackRow = rowByTaskId(fixture, 101); // LEAF_1 — late: false, progressVarianceLabel: 'on track'
+      const badge = onTrackRow.querySelector('.wbs-tree__progress-variance');
+      expect(badge).not.toBeNull();
+      expect(badge?.classList.contains('wbs-tree__progress-variance--late')).toBe(false);
+      expect(badge?.textContent).toContain('on track');
+    });
+
+    it('renders no variance badge when the progress line does not apply (progressVarianceLabel null)', () => {
+      const fixture = createFixture(makeApiMock());
+
+      const summaryRow = rowByTaskId(fixture, 100); // SUMMARY — progressVarianceLabel: null
+      expect(summaryRow.querySelector('.wbs-tree__progress-variance')).toBeNull();
     });
   });
 

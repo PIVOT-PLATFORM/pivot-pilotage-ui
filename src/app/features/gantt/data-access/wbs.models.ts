@@ -59,6 +59,28 @@ export interface WbsTaskResponse {
    * a colour bar alone.
    */
   readonly progressLabel: string | null;
+  /**
+   * Progress line (US22.4.8) — where {@link percentComplete} **should** be by the project's
+   * status date, linear interpolation over {@link startDate}/{@link finishDate}. `null` before
+   * the node's start, `100` after its finish, and `null`/`false`/`null` on all three progress-line
+   * fields together when the node has no schedule or the project has no status date yet (the line
+   * does not apply) — mirrors `WbsTaskResponse.expectedPercentComplete`.
+   */
+  readonly expectedPercentComplete: number | null;
+  /**
+   * Progress line (US22.4.8) — `true` when {@link percentComplete} falls short of
+   * {@link expectedPercentComplete} at the project's status date — mirrors
+   * `WbsTaskResponse.late`. Always `false` (never `null`) when the line does not apply, see
+   * {@link expectedPercentComplete}.
+   */
+  readonly late: boolean;
+  /**
+   * Progress line (US22.4.8) — textual rendering of the variance (e.g. `"3d late"`,
+   * `"on track"`), or `null` when the line does not apply — never colour-only (A11y AC), mirrors
+   * `WbsTaskResponse.progressVarianceLabel`. Always render this label alongside {@link late},
+   * never a colour-only indicator.
+   */
+  readonly progressVarianceLabel: string | null;
   /** Whether the temporal fields are derived/read-only (always `true` for a `SUMMARY` node — US22.4.1c). */
   readonly readOnly: boolean;
   /** ARIA role for this node (`"treeitem"`). */

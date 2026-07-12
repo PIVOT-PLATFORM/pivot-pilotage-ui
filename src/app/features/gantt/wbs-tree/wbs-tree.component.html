@@ -61,6 +61,24 @@
               </span>
             }
 
+            <!-- Progress line (US22.4.8 AC2) — materialises which tasks are late at the project's
+                 status date. `progressVarianceLabel` is `null` when the line doesn't apply (no
+                 schedule, or the project has no status date yet) — same "absent, not empty" rule as
+                 `progressLabel` above. The icon is purely decorative (`aria-hidden`) and always
+                 paired with the backend's own text (`progressVarianceLabel` is already a full
+                 sentence, e.g. "3d late"/"on track", never re-translated client-side) — never
+                 colour alone (A11y AC), mirroring `TaskConstraintComponent`'s warning icon+text
+                 pattern. -->
+            @if (node.progressVarianceLabel) {
+              <span
+                class="wbs-tree__progress-variance"
+                [class.wbs-tree__progress-variance--late]="node.late"
+              >
+                <span class="wbs-tree__progress-variance-icon" aria-hidden="true">{{ node.late ? '⚠' : '✓' }}</span>
+                <span class="wbs-tree__progress-variance-label">{{ node.progressVarianceLabel }}</span>
+              </span>
+            }
+
             <span
               class="wbs-tree__actions"
               role="group"
