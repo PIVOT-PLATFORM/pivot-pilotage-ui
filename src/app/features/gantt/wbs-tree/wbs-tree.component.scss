@@ -142,6 +142,25 @@
   font-variant-numeric: tabular-nums;
 }
 
+// US22.4.8 — progress line: a task's variance to the project's status date. `--late` tints the
+// badge, but never as the *only* cue — the icon (⚠/✓, aria-hidden) and the text label
+// (`progressVarianceLabel`, e.g. "3d late"/"on track") both carry the same information
+// non-visually, same "never colour alone" rule as `.wbs-tree__item--milestone`/`--recurring`.
+.wbs-tree__progress-variance {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  border-radius: 0.25rem;
+  padding: 0 0.25rem;
+  color: #188038;
+
+  &--late {
+    color: #b3261e;
+    font-weight: 600;
+  }
+}
+
 .wbs-tree__actions {
   display: flex;
   gap: 0.25rem;
