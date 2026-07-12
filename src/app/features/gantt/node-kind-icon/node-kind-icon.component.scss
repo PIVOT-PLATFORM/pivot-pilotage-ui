@@ -1,0 +1,20 @@
+.node-kind-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.node-kind-icon__glyph {
+  flex: none;
+
+  &--milestone {
+    // Filled diamond — same shape convention as roadmap-rapide's `MilestoneMarkerComponent`
+    // (`.rm-milestone__icon`), amber to stay distinct from the summary/leaf rows' neutral text.
+    fill: #a34f00;
+  }
+
+  &--recurring {
+    color: #1a73e8;
+  }
+}
