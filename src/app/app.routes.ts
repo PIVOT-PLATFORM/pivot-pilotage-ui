@@ -63,6 +63,15 @@ import { Routes } from '@angular/router';
  * scheduling` ci-dessus). Chemin identique au segment exposé par `pivot-pilotage-core`'s
  * `WbsTaskController` (`POST .../gantt/tasks/recurring`, PR #55), même gap-era
  * `tenantId`/`teamId`/`projectId` en path — voir `GanttProjectRef` TSDoc.
+ *
+ * `.../projects/:projectId/gantt/baselines` — US22.4.9 (baselines multiples & analyse des
+ * écarts), septième route du Gantt détaillé (F22.4) livrée en parallèle sur ce sprint. Panneau
+ * dédié plutôt qu'inline dans `WbsTreeComponent` — voir `BaselinePanelComponent`'s TSDoc pour la
+ * décision (même découpage que `constraint`/`scheduling` ci-dessus, plus une collision de
+ * fichiers réelle et documentée avec US22.4.8 sur `WbsTreeComponent`/`wbs.models.ts` ce sprint).
+ * Chemin identique au segment exposé par `pivot-pilotage-core`'s `BaselineController`
+ * (`.../baselines`, PR #63), même gap-era `tenantId`/`teamId`/`projectId` en path — voir
+ * `BaselineProjectRef` TSDoc.
  */
 export const routes: Routes = [
   {
@@ -120,5 +129,10 @@ export const routes: Routes = [
       import('./features/gantt/recurring-task-form/recurring-task-form.component').then(
         (m) => m.RecurringTaskFormComponent,
       ),
+  },
+  {
+    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/baselines',
+    loadComponent: () =>
+      import('./features/gantt/baseline-panel/baseline-panel.component').then((m) => m.BaselinePanelComponent),
   },
 ];

@@ -1,0 +1,290 @@
+<div class="baseline-panel">
+  <h2 class="baseline-panel__title">{{ 'gantt.baselines.title' | transloco }}</h2>
+
+  <p class="baseline-panel__sr-only" aria-live="polite">{{ announcement() }}</p>
+
+  @if (loading()) {
+    <p class="baseline-panel__status" role="status">{{ 'gantt.baselines.loading' | transloco }}</p>
+  } @else if (loadErrorKey()) {
+    <div class="baseline-panel__status baseline-panel__status--error" role="alert">
+      <p>{{ loadErrorKey()! | transloco }}</p>
+      <button type="button" (click)="retryLoad()">{{ 'gantt.baselines.retry' | transloco }}</button>
+    </div>
+  } @else {
+    <!-- AC1 — poser une baseline (slot optionnel, voir baseline.models.ts "no name field" note). -->
+    <section class="baseline-panel__section" aria-labelledby="baseline-pose-title">
+      <h3 id="baseline-pose-title" class="baseline-panel__section-title">{{ 'gantt.baselines.pose.title' | transloco }}</h3>
+
+      @if (isAtLimit()) {
+        <p class="baseline-panel__hint" role="status">{{ 'gantt.baselines.pose.hintAtLimit' | transloco }}</p>
+      }
+
+      <form class="baseline-panel__form" (submit)="$event.preventDefault(); submitPose()">
+        <div class="baseline-panel__field">
+          <label for="baseline-pose-index">{{ 'gantt.baselines.pose.indexLabel' | transloco }}</label>
+          <input
+            id="baseline-pose-index"
+            type="number"
+            [min]="minIndex"
+            [max]="maxIndex"
+            step="1"
+            [value]="poseIndexInput()"
+            [placeholder]="'gantt.baselines.pose.indexPlaceholder' | transloco"
+            (input)="onPoseIndexInput($event)"
+            [attr.aria-invalid]="poseErrorKey() ? true : null"
+            [attr.aria-describedby]="poseErrorKey() ? 'baseline-pose-error' : null"
+          />
+        </div>
+
+        <button type="submit" [disabled]="posing()">{{ 'gantt.baselines.pose.submit' | transloco }}</button>
+
+        @if (poseErrorKey()) {
+          <p id="baseline-pose-error" class="baseline-panel__error" role="alert">{{ poseErrorKey()! | transloco }}</p>
+        }
+      </form>
+    </section>
+
+    <!-- Liste des baselines posées + suppression (Security AC — écraser/supprimer, gated server-side). -->
+    <section class="baseline-panel__section" aria-labelledby="baseline-list-title">
+      <h3 id="baseline-list-title" class="baseline-panel__section-title">{{ 'gantt.baselines.list.title' | transloco }}</h3>
+
+      @if (baselines().length === 0) {
+        <p class="baseline-panel__empty">{{ 'gantt.baselines.list.empty' | transloco }}</p>
+      } @else {
+        <table class="baseline-panel__table">
+          <caption class="baseline-panel__sr-only">{{ 'gantt.baselines.list.title' | transloco }}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{{ 'gantt.baselines.list.columns.index' | transloco }}</th>
+              <th scope="col">{{ 'gantt.baselines.list.columns.capturedAt' | transloco }}</th>
+              <th scope="col">{{ 'gantt.baselines.list.columns.taskCount' | transloco }}</th>
+              <th scope="col">{{ 'gantt.baselines.list.columns.actions' | transloco }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (baseline of baselines(); track baseline.id) {
+              <tr>
+                <td>{{ baselineLabel(baseline.baselineIndex) }}</td>
+                <td>{{ formatDate(baseline.capturedAt) }}</td>
+                <td>{{ baseline.taskCount }}</td>
+                <td>
+                  @if (confirmingDeleteIndex() === baseline.baselineIndex) {
+                    <span>{{ 'gantt.baselines.delete.confirmPrompt' | transloco: { label: baselineLabel(baseline.baselineIndex) } }}</span>
+                    <button type="button" (click)="confirmDelete(baseline)">{{ 'gantt.baselines.delete.confirmButton' | transloco }}</button>
+                    <button type="button" (click)="cancelDelete()">{{ 'gantt.baselines.delete.cancelButton' | transloco }}</button>
+                  } @else {
+                    <button type="button" (click)="requestDelete(baseline.baselineIndex)">
+                      {{ 'gantt.baselines.delete.button' | transloco }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        @if (deleteErrorKey()) {
+          <p class="baseline-panel__error" role="alert">{{ deleteErrorKey()! | transloco }}</p>
+        }
+      }
+    </section>
+
+    <!-- AC2 — sélecteur de baseline active + écarts par tâche (planifié vs réel). -->
+    <section class="baseline-panel__section" aria-labelledby="baseline-variance-title">
+      <h3 id="baseline-variance-title" class="baseline-panel__section-title">{{ 'gantt.baselines.variance.title' | transloco }}</h3>
+
+      <div class="baseline-panel__field">
+        <label for="baseline-variance-select">{{ 'gantt.baselines.variance.selectLabel' | transloco }}</label>
+        <select id="baseline-variance-select" [value]="varianceIndexInput()" (change)="onVarianceIndexChange($event)">
+          <option value="">{{ 'gantt.baselines.variance.selectPlaceholder' | transloco }}</option>
+          @for (baseline of baselines(); track baseline.id) {
+            <option [value]="baseline.baselineIndex">{{ baselineLabel(baseline.baselineIndex) }}</option>
+          }
+        </select>
+      </div>
+
+      @if (varianceLoading()) {
+        <p class="baseline-panel__status" role="status">{{ 'gantt.baselines.variance.loading' | transloco }}</p>
+      } @else if (varianceErrorKey()) {
+        <p class="baseline-panel__error" role="alert">{{ varianceErrorKey()! | transloco }}</p>
+      } @else if (variance(); as report) {
+        @if (report.tasks.length === 0) {
+          <p class="baseline-panel__empty">{{ 'gantt.baselines.variance.empty' | transloco }}</p>
+        } @else {
+          <table class="baseline-panel__table baseline-panel__table--variance">
+            <caption class="baseline-panel__sr-only">
+              {{ 'gantt.baselines.variance.selectLabel' | transloco }} — {{ baselineLabel(report.baselineIndex) }}
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">{{ 'gantt.baselines.variance.columns.task' | transloco }}</th>
+                <th scope="col">{{ 'gantt.baselines.variance.columns.start' | transloco }}</th>
+                <th scope="col">{{ 'gantt.baselines.variance.columns.finish' | transloco }}</th>
+                <th scope="col">{{ 'gantt.baselines.variance.columns.duration' | transloco }}</th>
+                <th scope="col">{{ 'gantt.baselines.variance.columns.work' | transloco }}</th>
+                <th scope="col">{{ 'gantt.baselines.variance.columns.cost' | transloco }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of report.tasks; track row.taskId) {
+                <tr>
+                  <td>
+                    {{ row.taskName ?? ('gantt.baselines.taskRemoved' | transloco) }}
+                    @if (row.temporalPrecisionChanged) {
+                      <span class="baseline-panel__badge" [attr.title]="'gantt.baselines.precisionChanged' | transloco">
+                        {{ 'gantt.baselines.precisionChangedShort' | transloco }}
+                      </span>
+                    }
+                  </td>
+                  <td
+                    class="baseline-panel__cell"
+                    [class.baseline-panel__cell--behind]="(row.startVarianceMinutes ?? 0) > 0"
+                    [class.baseline-panel__cell--ahead]="(row.startVarianceMinutes ?? 0) < 0"
+                  >
+                    <span class="baseline-panel__cell-value">{{ formatDate(row.baselineStart) }} → {{ formatDate(row.currentStart) }}</span>
+                    <span class="baseline-panel__cell-label">{{ row.startVarianceLabel }}</span>
+                  </td>
+                  <td
+                    class="baseline-panel__cell"
+                    [class.baseline-panel__cell--behind]="(row.finishVarianceMinutes ?? 0) > 0"
+                    [class.baseline-panel__cell--ahead]="(row.finishVarianceMinutes ?? 0) < 0"
+                  >
+                    <span class="baseline-panel__cell-value">{{ formatDate(row.baselineFinish) }} → {{ formatDate(row.currentFinish) }}</span>
+                    <span class="baseline-panel__cell-label">{{ row.finishVarianceLabel }}</span>
+                  </td>
+                  <td
+                    class="baseline-panel__cell"
+                    [class.baseline-panel__cell--behind]="(row.durationVarianceMinutes ?? 0) > 0"
+                    [class.baseline-panel__cell--ahead]="(row.durationVarianceMinutes ?? 0) < 0"
+                  >
+                    <span class="baseline-panel__cell-value">{{ formatNumber(row.baselineDurationMinutes) }} → {{ formatNumber(row.currentDurationMinutes) }} min</span>
+                    <span class="baseline-panel__cell-label">{{ row.durationVarianceLabel }}</span>
+                  </td>
+                  <td
+                    class="baseline-panel__cell"
+                    [class.baseline-panel__cell--behind]="(row.workVarianceMinutes ?? 0) > 0"
+                    [class.baseline-panel__cell--ahead]="(row.workVarianceMinutes ?? 0) < 0"
+                  >
+                    <span class="baseline-panel__cell-value">{{ formatNumber(row.baselineWorkMinutes) }} → {{ formatNumber(row.currentWorkMinutes) }} min</span>
+                    <span class="baseline-panel__cell-label">{{ row.workVarianceLabel }}</span>
+                  </td>
+                  <td
+                    class="baseline-panel__cell"
+                    [class.baseline-panel__cell--behind]="(row.costVarianceAmount ?? 0) > 0"
+                    [class.baseline-panel__cell--ahead]="(row.costVarianceAmount ?? 0) < 0"
+                  >
+                    <span class="baseline-panel__cell-value">{{ formatNumber(row.baselineCostAmount) }} → {{ formatNumber(row.currentCostAmount) }}</span>
+                    <span class="baseline-panel__cell-label">{{ row.costVarianceLabel }}</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      }
+    </section>
+
+    <!-- AC3 — comparer deux baselines entre elles. -->
+    <section class="baseline-panel__section" aria-labelledby="baseline-compare-title">
+      <h3 id="baseline-compare-title" class="baseline-panel__section-title">{{ 'gantt.baselines.compare.title' | transloco }}</h3>
+
+      <form class="baseline-panel__form" (submit)="$event.preventDefault(); submitCompare()">
+        <div class="baseline-panel__field">
+          <label for="baseline-compare-from">{{ 'gantt.baselines.compare.fromLabel' | transloco }}</label>
+          <select id="baseline-compare-from" [value]="compareFromInput()" (change)="onCompareFromChange($event)">
+            <option value="">{{ 'gantt.baselines.variance.selectPlaceholder' | transloco }}</option>
+            @for (baseline of baselines(); track baseline.id) {
+              <option [value]="baseline.baselineIndex">{{ baselineLabel(baseline.baselineIndex) }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="baseline-panel__field">
+          <label for="baseline-compare-to">{{ 'gantt.baselines.compare.toLabel' | transloco }}</label>
+          <select id="baseline-compare-to" [value]="compareToInput()" (change)="onCompareToChange($event)">
+            <option value="">{{ 'gantt.baselines.variance.selectPlaceholder' | transloco }}</option>
+            @for (baseline of baselines(); track baseline.id) {
+              <option [value]="baseline.baselineIndex">{{ baselineLabel(baseline.baselineIndex) }}</option>
+            }
+          </select>
+        </div>
+
+        <button type="submit" [disabled]="comparing()">{{ 'gantt.baselines.compare.submit' | transloco }}</button>
+
+        @if (compareErrorKey()) {
+          <p class="baseline-panel__error" role="alert">{{ compareErrorKey()! | transloco }}</p>
+        }
+      </form>
+
+      @if (comparing()) {
+        <p class="baseline-panel__status" role="status">{{ 'gantt.baselines.compare.loading' | transloco }}</p>
+      } @else if (comparison(); as report) {
+        @if (report.tasks.length === 0) {
+          <p class="baseline-panel__empty">{{ 'gantt.baselines.compare.empty' | transloco }}</p>
+        } @else {
+          <table class="baseline-panel__table baseline-panel__table--variance">
+            <caption class="baseline-panel__sr-only">
+              {{ baselineLabel(report.fromIndex) }} → {{ baselineLabel(report.toIndex) }}
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">{{ 'gantt.baselines.variance.columns.task' | transloco }}</th>
+                <th scope="col">{{ 'gantt.baselines.variance.columns.start' | transloco }}</th>
+                <th scope="col">{{ 'gantt.baselines.variance.columns.finish' | transloco }}</th>
+                <th scope="col">{{ 'gantt.baselines.variance.columns.duration' | transloco }}</th>
+                <th scope="col">{{ 'gantt.baselines.variance.columns.work' | transloco }}</th>
+                <th scope="col">{{ 'gantt.baselines.variance.columns.cost' | transloco }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of report.tasks; track row.taskId) {
+                <tr>
+                  <td>{{ row.taskName ?? ('gantt.baselines.taskRemoved' | transloco) }}</td>
+                  <td
+                    class="baseline-panel__cell"
+                    [class.baseline-panel__cell--behind]="(row.startDeltaMinutes ?? 0) > 0"
+                    [class.baseline-panel__cell--ahead]="(row.startDeltaMinutes ?? 0) < 0"
+                  >
+                    <span class="baseline-panel__cell-value">{{ formatDate(row.fromStart) }} → {{ formatDate(row.toStart) }}</span>
+                    <span class="baseline-panel__cell-label">{{ row.startDeltaLabel }}</span>
+                  </td>
+                  <td
+                    class="baseline-panel__cell"
+                    [class.baseline-panel__cell--behind]="(row.finishDeltaMinutes ?? 0) > 0"
+                    [class.baseline-panel__cell--ahead]="(row.finishDeltaMinutes ?? 0) < 0"
+                  >
+                    <span class="baseline-panel__cell-value">{{ formatDate(row.fromFinish) }} → {{ formatDate(row.toFinish) }}</span>
+                    <span class="baseline-panel__cell-label">{{ row.finishDeltaLabel }}</span>
+                  </td>
+                  <td
+                    class="baseline-panel__cell"
+                    [class.baseline-panel__cell--behind]="(row.durationDeltaMinutes ?? 0) > 0"
+                    [class.baseline-panel__cell--ahead]="(row.durationDeltaMinutes ?? 0) < 0"
+                  >
+                    <span class="baseline-panel__cell-value">{{ formatNumber(row.fromDurationMinutes) }} → {{ formatNumber(row.toDurationMinutes) }} min</span>
+                    <span class="baseline-panel__cell-label">{{ row.durationDeltaLabel }}</span>
+                  </td>
+                  <td
+                    class="baseline-panel__cell"
+                    [class.baseline-panel__cell--behind]="(row.workDeltaMinutes ?? 0) > 0"
+                    [class.baseline-panel__cell--ahead]="(row.workDeltaMinutes ?? 0) < 0"
+                  >
+                    <span class="baseline-panel__cell-value">{{ formatNumber(row.fromWorkMinutes) }} → {{ formatNumber(row.toWorkMinutes) }} min</span>
+                    <span class="baseline-panel__cell-label">{{ row.workDeltaLabel }}</span>
+                  </td>
+                  <td
+                    class="baseline-panel__cell"
+                    [class.baseline-panel__cell--behind]="(row.costDeltaAmount ?? 0) > 0"
+                    [class.baseline-panel__cell--ahead]="(row.costDeltaAmount ?? 0) < 0"
+                  >
+                    <span class="baseline-panel__cell-value">{{ formatNumber(row.fromCostAmount) }} → {{ formatNumber(row.toCostAmount) }}</span>
+                    <span class="baseline-panel__cell-label">{{ row.costDeltaLabel }}</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      }
+    </section>
+  }
+</div>
