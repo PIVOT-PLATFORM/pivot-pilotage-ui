@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Subject, of, throwError } from 'rxjs';
 import { describe, it, expect, vi } from 'vitest';
@@ -16,6 +16,7 @@ const SUMMARY: WbsTaskResponse = {
   wbsCode: '1',
   name: 'Lot A',
   nodeKind: 'SUMMARY',
+  nodeKindLabel: 'Summary task',
   position: 0,
   startDate: '2026-01-01T00:00:00Z',
   finishDate: '2026-03-01T00:00:00Z',
@@ -37,6 +38,7 @@ const LEAF_1: WbsTaskResponse = {
   wbsCode: '1.1',
   name: 'Tâche 1',
   nodeKind: 'LEAF',
+  nodeKindLabel: 'Task',
   position: 0,
   startDate: '2026-01-01T00:00:00Z',
   finishDate: '2026-01-15T00:00:00Z',
@@ -58,6 +60,7 @@ const LEAF_2: WbsTaskResponse = {
   wbsCode: '1.2',
   name: 'Tâche 2',
   nodeKind: 'LEAF',
+  nodeKindLabel: 'Task',
   position: 1,
   startDate: '2026-01-16T00:00:00Z',
   finishDate: '2026-03-01T00:00:00Z',
@@ -67,6 +70,50 @@ const LEAF_2: WbsTaskResponse = {
   readOnly: false,
   ariaRole: 'treeitem',
   ariaLevel: 2,
+  ariaSetSize: 2,
+  ariaPosInSet: 2,
+  ariaReadOnly: false,
+  revision: 0,
+};
+
+const MILESTONE: WbsTaskResponse = {
+  taskId: 103,
+  parentTaskId: 100,
+  wbsCode: '1.3',
+  name: 'Comité de lancement',
+  nodeKind: 'MILESTONE',
+  nodeKindLabel: 'Milestone',
+  position: 2,
+  startDate: '2026-01-20T00:00:00Z',
+  finishDate: '2026-01-20T00:00:00Z',
+  durationMinutes: 0,
+  percentComplete: null,
+  progressLabel: null,
+  readOnly: false,
+  ariaRole: 'treeitem',
+  ariaLevel: 2,
+  ariaSetSize: 3,
+  ariaPosInSet: 3,
+  ariaReadOnly: false,
+  revision: 0,
+};
+
+const RECURRING_SERIES: WbsTaskResponse = {
+  taskId: 104,
+  parentTaskId: null,
+  wbsCode: '2',
+  name: 'Comité hebdo',
+  nodeKind: 'RECURRING',
+  nodeKindLabel: 'Recurring task series',
+  position: 1,
+  startDate: null,
+  finishDate: null,
+  durationMinutes: null,
+  percentComplete: null,
+  progressLabel: null,
+  readOnly: false,
+  ariaRole: 'treeitem',
+  ariaLevel: 1,
   ariaSetSize: 2,
   ariaPosInSet: 2,
   ariaReadOnly: false,
@@ -96,6 +143,7 @@ function createFixture(api: ApiMock): ComponentFixture<WbsTreeComponent> {
   TestBed.configureTestingModule({
     imports: [WbsTreeComponent, TranslocoTestingModule.forRoot({ langs: { fr: {}, en: {} } })],
     providers: [
+      provideRouter([]),
       { provide: WbsApiService, useValue: api },
       {
         provide: ActivatedRoute,
@@ -512,6 +560,56 @@ describe('WbsTreeComponent', () => {
 
       const liveRegion = (fixture.nativeElement as HTMLElement).querySelector('[aria-live="polite"]');
       expect(liveRegion?.textContent).toContain('gantt.wbsTree.actions.announceReverted');
+    });
+  });
+
+  describe('US22.4.6 — jalons & tâches périodiques', () => {
+    it('AC1 — a MILESTONE node renders a distinct diamond glyph, a visually distinct row, and a non-colour-only text label', () => {
+      const api = makeApiMock({
+        tree: vi.fn(() => of({ projectId: 3, ariaRole: 'tree', nodes: [SUMMARY, LEAF_1, MILESTONE] })),
+      });
+      const fixture = createFixture(api);
+
+      const milestoneRow = rowByTaskId(fixture, 103);
+      expect(milestoneRow.classList.contains('wbs-tree__item--milestone')).toBe(true);
+      expect(milestoneRow.querySelector('svg.node-kind-icon__glyph--milestone')).not.toBeNull();
+      expect(milestoneRow.textContent).toContain('gantt.wbsTree.nodeKind.MILESTONE');
+    });
+
+    it('A11y — surfaces the backend-derived nodeKindLabel as a hover tooltip on the row', () => {
+      const api = makeApiMock({
+        tree: vi.fn(() => of({ projectId: 3, ariaRole: 'tree', nodes: [SUMMARY, LEAF_1, MILESTONE] })),
+      });
+      const fixture = createFixture(api);
+
+      expect(rowByTaskId(fixture, 103).getAttribute('title')).toBe('Milestone');
+    });
+
+    it('renders a RECURRING series node with its own distinct glyph and row styling', () => {
+      const api = makeApiMock({
+        tree: vi.fn(() => of({ projectId: 3, ariaRole: 'tree', nodes: [RECURRING_SERIES, LEAF_1] })),
+      });
+      const fixture = createFixture(api);
+
+      const seriesRow = rowByTaskId(fixture, 104);
+      expect(seriesRow.classList.contains('wbs-tree__item--recurring')).toBe(true);
+      expect(seriesRow.querySelector('svg.node-kind-icon__glyph--recurring')).not.toBeNull();
+      expect(seriesRow.getAttribute('title')).toBe('Recurring task series');
+    });
+
+    it('never renders a kind glyph for a plain SUMMARY/LEAF node', () => {
+      const fixture = createFixture(makeApiMock());
+
+      expect(rowByTaskId(fixture, 100).querySelector('.node-kind-icon__glyph')).toBeNull();
+      expect(rowByTaskId(fixture, 101).querySelector('.node-kind-icon__glyph')).toBeNull();
+    });
+
+    it('exposes a link to the periodic-series creation form, scoped to the current project', () => {
+      const fixture = createFixture(makeApiMock());
+
+      const link = (fixture.nativeElement as HTMLElement).querySelector('.wbs-tree__recurring-link') as HTMLAnchorElement;
+      expect(link).not.toBeNull();
+      expect(text(fixture)).toContain('gantt.wbsTree.createRecurringLink');
     });
   });
 });
