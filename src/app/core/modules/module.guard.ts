@@ -2,7 +2,6 @@ import { inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { Observable, catchError, map, of } from 'rxjs';
-import { TranslocoService } from '@jsverse/transloco';
 import { ToastService } from '../toast/toast.service';
 import { PIVOT_CORE_API_URL } from '../config/tokens';
 
@@ -52,12 +51,14 @@ interface ModuleStatusDto {
  *   route) — this repo's own standalone bootstrap shell does not, by design (see
  *   `app.routes.ts`). Same accepted class of gap as `pivot-collaboratif-ui`'s
  *   `board-access.guard.ts` TSDoc documents for its own redirect target.
- * - i18n: the toast message is resolved via `TranslocoService.translate('pilotage.guard.moduleDisabled')`
- *   — never a literal string. No `fr.json`/`en.json` catalog entry exists in this repo yet
- *   (no Transloco loader is wired into this bootstrap-only `app.config.ts` — see
- *   `app.routes.ts` comment for why); the catalog entry (`"Module non disponible"` /
- *   `"Module unavailable"`) will be added once this module gets a real i18n asset pipeline or
- *   is integrated into the shell's catalog. Zero code change required here when that happens.
+ * - i18n: the toast receives the **Transloco key** `'pilotage.guard.moduleDisabled'` — never a
+ *   literal string — following the canonical `ToastService` contract (EN17.13): the message is
+ *   translated at render time by the shell's global toast container, not here. No
+ *   `fr.json`/`en.json` catalog entry exists in this repo yet (no Transloco loader is wired into
+ *   this bootstrap-only `app.config.ts` — see `app.routes.ts` comment for why); the catalog entry
+ *   (`"Module non disponible"` / `"Module unavailable"`) will be added once this module gets a
+ *   real i18n asset pipeline or is integrated into the shell's catalog. Zero code change required
+ *   here when that happens.
  *
  * @param moduleId technical module identifier, e.g. `"pilotage"`
  */
@@ -66,11 +67,10 @@ export function moduleGuard(moduleId: string): CanActivateFn {
     const http = inject(HttpClient);
     const router = inject(Router);
     const toast = inject(ToastService);
-    const transloco = inject(TranslocoService);
     const apiUrl = inject(PIVOT_CORE_API_URL);
 
     const denyAndRedirect = (): UrlTree => {
-      toast.show(transloco.translate('pilotage.guard.moduleDisabled'), 'warning');
+      toast.show('pilotage.guard.moduleDisabled', 'warning');
       return router.createUrlTree(['/home']);
     };
 

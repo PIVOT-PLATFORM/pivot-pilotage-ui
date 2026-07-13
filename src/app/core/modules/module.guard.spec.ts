@@ -10,7 +10,6 @@ import {
   provideRouter,
 } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { TranslocoService } from '@jsverse/transloco';
 import { Observable } from 'rxjs';
 import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import { moduleGuard } from './module.guard';
@@ -19,14 +18,6 @@ import { ToastService } from '../toast/toast.service';
 
 const API = 'http://api.test';
 const STATUS_URL = `${API}/modules/pilotage/status`;
-
-/** Mirrors `boardAccessGuard.spec.ts`'s stub, but resolves the real AC2 wording for assertions. */
-function mockTransloco(): Pick<TranslocoService, 'translate'> {
-  return {
-    translate: ((key: string) =>
-      key === 'pilotage.guard.moduleDisabled' ? 'Module non disponible' : key) as TranslocoService['translate'],
-  };
-}
 
 describe('moduleGuard (unit) — EN18.2', () => {
   let httpMock: HttpTestingController;
@@ -40,7 +31,6 @@ describe('moduleGuard (unit) — EN18.2', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: PIVOT_CORE_API_URL, useValue: API },
-        { provide: TranslocoService, useValue: mockTransloco() },
       ],
     });
     httpMock = TestBed.inject(HttpTestingController);
@@ -75,7 +65,7 @@ describe('moduleGuard (unit) — EN18.2', () => {
 
     expect(result).toBeInstanceOf(UrlTree);
     expect(router.serializeUrl(result as UrlTree)).toBe('/home');
-    expect(toastSpy).toHaveBeenCalledWith('Module non disponible', 'warning');
+    expect(toastSpy).toHaveBeenCalledWith('pilotage.guard.moduleDisabled', 'warning');
   });
 
   it('AC5 — Vitest suite covers enabled=true then enabled=false explicitly (same guard instance behavior)', () => {
@@ -158,7 +148,7 @@ describe('moduleGuard (unit) — EN18.2', () => {
     expect(router.serializeUrl(resultB as UrlTree)).toBe('/home');
   });
 
-  it('A11y — passes a plain translated string (no raw HTML) and a semantic "warning" type to the toast', () => {
+  it('A11y — passes a plain message key (no raw HTML) and a semantic "warning" type to the toast', () => {
     const toastSpy = vi.spyOn(toastService, 'show');
     run().subscribe();
 
@@ -206,7 +196,6 @@ describe('moduleGuard — route wiring (AC1, AC3, AC4) — EN18.2', () => {
           },
         ]),
         { provide: PIVOT_CORE_API_URL, useValue: API },
-        { provide: TranslocoService, useValue: mockTransloco() },
       ],
     });
     httpMock = TestBed.inject(HttpTestingController);
