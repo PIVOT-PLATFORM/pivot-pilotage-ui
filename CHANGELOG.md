@@ -1,3 +1,10 @@
+# [0.3.0](https://github.com/PIVOT-PLATFORM/pivot-pilotage-ui/compare/v0.2.0...v0.3.0) (2026-07-13)
+
+
+### Features
+
+* **i18n:** ship module translations in the published package ([#56](https://github.com/PIVOT-PLATFORM/pivot-pilotage-ui/issues/56)) ([0bf4deb](https://github.com/PIVOT-PLATFORM/pivot-pilotage-ui/commit/0bf4deb9f899c0f5e192bb2d36535514103996a3))
+
 # [0.2.0](https://github.com/PIVOT-PLATFORM/pivot-pilotage-ui/compare/v0.1.0...v0.2.0) (2026-07-13)
 
 
