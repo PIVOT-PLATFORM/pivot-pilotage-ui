@@ -1,154 +1,35 @@
 import { Routes } from '@angular/router';
+import { PILOTAGE_ROUTES } from '../../projects/pilotage-ui/src/public-api';
 
 /**
- * Routes de pivot-pilotage-ui.
+ * Routes du dev harness standalone de pivot-pilotage-ui.
  *
- * `''` reste le squelette placeholder bootstrap-only (voir CLAUDE.md) : sert uniquement à
- * valider que le workspace build/boot en CI (lint, tests, build, E2E, Lighthouse) — voir
- * TODO-SETUP.md §4, qui documente que la passe Lighthouse publique tourne contre cette route
- * SANS dépendance backend. Ne pas la faire dépendre d'un appel HTTP réel.
+ * Depuis EN18 (extraction en librairie), toutes les vraies routes métier (roadmap, Gantt
+ * détaillé, calendriers, partage public) vivent dans le projet librairie `pilotage-ui`
+ * (`projects/pilotage-ui/src/lib/pilotage.routes.ts`, source unique de vérité) et sont importées
+ * ici via `PILOTAGE_ROUTES` — exactement comme le harness de `pivot-collaboratif-ui` importe
+ * `whiteboardRoutes` depuis son propre projet librairie (EN17.9). Le vrai shell (`pivot-ui`)
+ * consommera le paquet publié `@pivot-platform/pilotage-ui` à la place.
  *
- * `tenants/:tenantId/teams/:teamId/projects/:projectId/roadmap` — US22.3.1 (roadmap rapide),
- * première feature métier réelle de ce repo. Chemin volontairement identique aux segments
- * d'URL exposés par `pivot-pilotage-core`'s `RoadmapController` (même gap-era `tenantId`/
- * `teamId`/`projectId` en path, jamais en query/header — voir `RoadmapProjectRef` TSDoc) :
- * une fois ce module réellement lazy-loadé dans le shell `pivot-ui`, c'est le routing du shell
- * (qui résout déjà le tenant/team courant) qui fournira ces segments — ce repo ne les type, ne
- * les stocke et ne les gère jamais lui-même (règle absolue tenantId/userId, CLAUDE.md).
+ * `''` reste le squelette placeholder bootstrap-only (voir CLAUDE.md) : sert uniquement à valider
+ * que le workspace build/boot en CI (lint, tests, build, E2E, Lighthouse) SANS dépendance
+ * backend — voir TODO-SETUP.md §4. Ne pas la faire dépendre d'un appel HTTP réel. Elle n'est PAS
+ * dans la librairie (ce n'est pas une feature métier) : le shell a sa propre route d'accueil.
  *
- * EN18.2 — `moduleGuard('pilotage')` (`./core/modules/module.guard.ts`) existe, est pleinement
- * implémenté et testé, mais reste volontairement **non câblé** ici : ce squelette standalone
- * n'a pas de route `/home` de repli (voir TSDoc de `moduleGuard`) et US22.3.1 ne dépend pas de
- * l'activation de module pour être testable en isolation. Il sera appliqué via
- * `canActivateChild` sur une route racine enveloppant E22-E27/E13 dès l'intégration réelle dans
- * le shell pivot-ui (mirroring `pivot-agilite-ui/src/app/app.routes.ts`, commentaire US20.1.1).
+ * Les segments d'URL `tenants/:tenantId/teams/:teamId/projects/:projectId/...` des routes de la
+ * librairie sont conservés tels quels : une fois ce module réellement lazy-loadé dans le shell,
+ * c'est le routing du shell (qui résout déjà le tenant/team courant) qui fournira ces segments.
+ * `PILOTAGE_ROUTES` est étalé au niveau racine (et non monté sous un préfixe) pour préserver
+ * exactement les URLs actuelles du harness.
  *
- * `roadmap-shares/:token` — US22.3.5 (partage & export), **route publique, aucun guard**. Ce
- * n'est pas un oubli : un lien de partage doit être ouvrable par un destinataire sans compte
- * PIVOT ni session — voir `RoadmapPublicShareApiService`/`RoadmapPublicShareViewComponent` TSDoc.
- * Ne jamais lui adjoindre `moduleGuard`/`AuthGuard` un jour sans revalider ce choix.
- *
- * `tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tree` — US22.4.1a/b/c (WBS :
- * modèle arborescent, numérotation, indent/outdent, agrégation), et
- * `.../gantt/dependencies` — US22.4.3 (dépendances typées FS/SS/FF/SF + retard/avance) : les
- * deux premières routes du Gantt détaillé (F22.4) dans ce repo, livrées en parallèle sur des
- * branches séparées. Chemins identiques aux segments exposés par `pivot-pilotage-core`'s
- * `WbsTaskController` (`.../gantt/tree`, `.../gantt/dependencies`), même gap-era
- * `tenantId`/`teamId`/`projectId` en path — voir `GanttProjectRef`/`DependencyProjectRef` TSDoc.
- * `.../gantt` (sans suffixe) reste délibérément libre pour une future route d'index/synthèse
- * une fois plusieurs sous-vues Gantt livrées.
- *
- * `tenants/:tenantId/teams/:teamId/calendars` et
- * `.../projects/:projectId/tasks/:taskId/effective-calendar` — US22.4.5 (calendriers ouvrés &
- * exceptions, F22.4 "Gantt détaillé"), troisième route livrée en parallèle sur ce même sprint.
- * Chemins identiques aux segments d'URL exposés par `pivot-pilotage-core`'s
- * `CalendarController` (même gap-era `tenantId`/`teamId` en path — voir
- * `CalendarTeamRef`/`CalendarTaskRef` TSDoc), même posture que la roadmap ci-dessus.
- *
- * `.../projects/:projectId/gantt/tasks/:taskId/scheduling` — US22.4.2 (durées, effort,
- * planification auto vs manuelle), quatrième route du Gantt détaillé (F22.4) livrée en parallèle
- * sur ce sprint. Chemin identique aux segments exposés par `pivot-pilotage-core`'s
- * `WbsTaskController` (`.../gantt/tasks/{taskId}/duration|effort|scheduling-mode`, PR #49), même
- * gap-era `tenantId`/`teamId`/`projectId` en path — voir `TaskSchedulingProjectRef` TSDoc.
- *
- * `.../projects/:projectId/gantt/tasks/:taskId/constraint` — US22.4.4 (contraintes de date &
- * échéances), cinquième route du Gantt détaillé (F22.4) livrée en parallèle sur ce sprint. Chemin
- * identique au segment exposé par `pivot-pilotage-core`'s `WbsTaskController`
- * (`.../gantt/tasks/{taskId}/constraint`, PR #54), même gap-era `tenantId`/`teamId`/`projectId`
- * en path — voir `TaskConstraintProjectRef` TSDoc.
- *
- * `.../projects/:projectId/gantt/tasks/recurring` — US22.4.6 (jalons & tâches périodiques), la
- * série périodique se crée via ce formulaire dédié plutôt qu'inline dans `WbsTreeComponent`
- * (même découpage "vue liste + route de formulaire séparée" que `.../gantt/tasks/:taskId/
- * scheduling` ci-dessus). Chemin identique au segment exposé par `pivot-pilotage-core`'s
- * `WbsTaskController` (`POST .../gantt/tasks/recurring`, PR #55), même gap-era
- * `tenantId`/`teamId`/`projectId` en path — voir `GanttProjectRef` TSDoc.
- *
- * `.../projects/:projectId/gantt/baselines` — US22.4.9 (baselines multiples & analyse des
- * écarts), sixième route du Gantt détaillé (F22.4) livrée en parallèle sur ce sprint. Panneau
- * dédié plutôt qu'inline dans `WbsTreeComponent` — voir `BaselinePanelComponent`'s TSDoc pour la
- * décision (même découpage que `constraint`/`scheduling` ci-dessus, plus une collision de
- * fichiers réelle et documentée avec US22.4.8 sur `WbsTreeComponent`/`wbs.models.ts` ce sprint).
- * Chemin identique au segment exposé par `pivot-pilotage-core`'s `BaselineController`
- * (`.../baselines`, PR #63), même gap-era `tenantId`/`teamId`/`projectId` en path — voir
- * `BaselineProjectRef` TSDoc.
- *
- * `.../projects/:projectId/gantt/tasks/:taskId/progress` — US22.4.8 (suivi d'avancement : %
- * réalisé, réel/restant), septième route du Gantt détaillé (F22.4) livrée sur ce sprint. Chemin
- * identique au segment exposé par `pivot-pilotage-core`'s `WbsTaskController`
- * (`PATCH .../gantt/tasks/{taskId}/progress`, PR #59), même gap-era
- * `tenantId`/`teamId`/`projectId` en path — voir `TaskProgressProjectRef` TSDoc. The progress
- * *line* itself (retard vs date d'état) is rendered directly by `WbsTreeComponent` from the data
- * `GET .../gantt/tree` already carries — this route is only the entry-form for a task's own
- * percent complete, mirroring the `scheduling`/`constraint` split above.
+ * EN18.2 — `moduleGuard('pilotage')` (`./core/modules/module.guard.ts`) reste volontairement
+ * non câblé ici (squelette standalone sans route `/home` de repli) ; il sera appliqué par le
+ * shell pivot-ui lors de l'intégration réelle.
  */
 export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
   },
-  {
-    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/roadmap',
-    loadComponent: () =>
-      import('./features/roadmap/roadmap-board/roadmap-board.component').then((m) => m.RoadmapBoardComponent),
-  },
-  {
-    path: 'roadmap-shares/:token',
-    loadComponent: () =>
-      import('./features/roadmap/roadmap-public-share/roadmap-public-share-view.component').then(
-        (m) => m.RoadmapPublicShareViewComponent,
-      ),
-  },
-  {
-    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/dependencies',
-    loadComponent: () =>
-      import('./features/gantt/dependency-manager/dependency-manager.component').then(
-        (m) => m.DependencyManagerComponent,
-      ),
-  },
-  {
-    path: 'tenants/:tenantId/teams/:teamId/calendars',
-    loadComponent: () =>
-      import('./features/calendar/calendar-manager/calendar-manager.component').then((m) => m.CalendarManagerComponent),
-  },
-  {
-    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/tasks/:taskId/effective-calendar',
-    loadComponent: () =>
-      import('./features/calendar/effective-calendar-view/effective-calendar-view.component').then(
-        (m) => m.EffectiveCalendarViewComponent,
-      ),
-  },
-  {
-    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tree',
-    loadComponent: () => import('./features/gantt/wbs-tree/wbs-tree.component').then((m) => m.WbsTreeComponent),
-  },
-  {
-    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tasks/:taskId/scheduling',
-    loadComponent: () =>
-      import('./features/gantt/task-scheduling/task-scheduling.component').then((m) => m.TaskSchedulingComponent),
-  },
-  {
-    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tasks/:taskId/constraint',
-    loadComponent: () =>
-      import('./features/gantt/task-constraint/task-constraint.component').then((m) => m.TaskConstraintComponent),
-  },
-  {
-    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tasks/recurring',
-    loadComponent: () =>
-      import('./features/gantt/recurring-task-form/recurring-task-form.component').then(
-        (m) => m.RecurringTaskFormComponent,
-      ),
-  },
-  {
-    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/baselines',
-    loadComponent: () =>
-      import('./features/gantt/baseline-panel/baseline-panel.component').then((m) => m.BaselinePanelComponent),
-  },
-  {
-    path: 'tenants/:tenantId/teams/:teamId/projects/:projectId/gantt/tasks/:taskId/progress',
-    loadComponent: () =>
-      import('./features/gantt/task-progress-form/task-progress-form.component').then(
-        (m) => m.TaskProgressFormComponent,
-      ),
-  },
+  ...PILOTAGE_ROUTES,
 ];

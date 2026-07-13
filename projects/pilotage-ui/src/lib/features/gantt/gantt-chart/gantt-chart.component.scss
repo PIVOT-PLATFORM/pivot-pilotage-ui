@@ -1,0 +1,251 @@
+// Gantt chart — two-pane timeline. Uses the shared PIVOT tokens (var(--color-*)/--radius-*/
+// --font-*), provided globally by the shell design-system, so the module never hardcodes colours.
+
+$row-h: 52px;
+$group-h: 32px;
+$head-h: 44px;
+$bar-h: 26px;
+$left-w: 320px;
+
+:host {
+  display: block;
+  font-family: var(--font-sans);
+  color: var(--color-gray-900);
+}
+
+.gc {
+  display: flex;
+  height: calc(100vh - 120px);
+  min-height: 420px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface-card);
+
+  &__left {
+    width: $left-w;
+    flex-shrink: 0;
+    border-right: 1px solid var(--color-gray-200);
+    overflow: hidden;
+    background: var(--surface-card);
+  }
+
+  &__left-head {
+    height: $head-h;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--color-gray-200);
+    background: var(--color-gray-50);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-gray-500);
+  }
+
+  &__left-body {
+    position: relative;
+  }
+
+  &__group {
+    height: $group-h;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    background: var(--color-brand-50);
+    border-bottom: 1px solid var(--color-gray-100);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-brand-700);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__row {
+    height: $row-h;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--color-gray-100);
+
+    &:hover {
+      background: var(--color-gray-50);
+    }
+
+    &--ms .gc__row-name {
+      color: var(--color-brand-700);
+    }
+  }
+
+  &__row-body {
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__row-name {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--color-gray-900);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__row-dates {
+    margin-top: 2px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--color-gray-500);
+  }
+
+  // Avatar (placeholder d'assigné) → DS `.pv-avatar`.
+
+  &__ms-ico {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    background: var(--color-brand-600);
+    transform: rotate(45deg);
+    border-radius: 1px;
+  }
+
+  // --- Right pane ---------------------------------------------------------------------------
+  &__right {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    background: var(--surface-card);
+  }
+
+  &__tl {
+    position: relative;
+  }
+
+  &__tl-head {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--surface-card);
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+
+  &__month {
+    position: absolute;
+    top: 0;
+    height: $head-h;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    border-left: 1px solid var(--color-gray-200);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-gray-600);
+    text-transform: capitalize;
+  }
+
+  &__tl-body {
+    position: relative;
+  }
+
+  &__grid {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--color-gray-100);
+  }
+
+  &__band {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: var(--color-brand-50);
+  }
+
+  &__bar {
+    position: absolute;
+    height: $bar-h;
+    border-radius: var(--radius-md);
+    background: var(--color-brand-100);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  &__bar-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: var(--color-brand-500);
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+  }
+
+  &__pct {
+    position: absolute;
+    transform: translateY(-50%);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-gray-500);
+    white-space: nowrap;
+  }
+
+  &__ms {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  &__ms-d {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    background: var(--color-brand-600);
+    transform: rotate(45deg);
+    border-radius: 1px;
+  }
+
+  &__ms-lbl {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--color-brand-700);
+    white-space: nowrap;
+  }
+
+  &__deps {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  &__dep {
+    fill: none;
+    stroke: var(--color-gray-300);
+    stroke-width: 1.5;
+  }
+
+  &__dep-arrow {
+    fill: var(--color-gray-300);
+    stroke: none;
+  }
+}
+
+// --- Loading / error states -----------------------------------------------------------------
+.gc-state {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+
+  &__bar {
+    height: 40px;
+    border-radius: var(--radius-md);
+  }
+}

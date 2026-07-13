@@ -91,6 +91,8 @@ jobs:
     outputs:
       image:  ${{ steps.build-docker.outputs.image_name }}
       digest: ${{ steps.push.outputs.digest }}
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
     permissions:
       contents: write
       issues: write
@@ -172,6 +174,27 @@ jobs:
             exit 1
           fi
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Build @pivot-platform/pilotage-ui library
+        run: npm run build:pilotage-ui
+
+      - name: Set @pivot-platform/pilotage-ui package version
+        run: npm --prefix dist/pilotage-ui version "$VERSION" --no-git-tag-version
+
+      - name: Publish @pivot-platform/pilotage-ui to GitHub Packages
+        # EN18 — publie le paquet npm de la lib (consommé en lazy-loading par le shell pivot-ui),
+        # dans le même job que l'image Docker et AVANT la création du tag/release, comme le fait
+        # pivot-collaboratif-ui/release.yml. Sans ce step, release.yml ne publiait que l'image
+        # Docker : le paquet @pivot-platform/pilotage-ui restait 404 sur GitHub Packages malgré les
+        # tags (le shell ne pouvait pas l'installer). Idempotent (version déjà publiée tolérée).
+        run: |
+          if npm view "@pivot-platform/pilotage-ui@${VERSION}" version 2>/dev/null; then
+            echo "::notice::${VERSION} already published — skipping (idempotent re-run)."
+          else
+            npm publish ./dist/pilotage-ui
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Semantic Release (create tag + release)
         env:
